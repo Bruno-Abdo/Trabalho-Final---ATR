@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Mount your local workspace into the container.
+      - ..:/home/atr/workspace:cached
+    ports:
+      - "8000:8000"
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    # Keep the container alive for VS Code to attach
+    command: sleep infinity

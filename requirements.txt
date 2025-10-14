@@ -1,0 +1,7 @@
+# ---- Core GUI ----
+PyQt6
+
+# ---- Data & plotting ----
+# numpy
+# matplotlib
+# pandas
