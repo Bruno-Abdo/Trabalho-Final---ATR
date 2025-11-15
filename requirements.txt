@@ -1,5 +1,8 @@
-# ---- Core GUI ----
-PyQt6
+# ---- Core GUI (Pygame) ----
+pygame-ce
+
+# ---- MQTT Client ----
+paho-mqtt
 
 # ---- Data & plotting ----
 # numpy

@@ -15,6 +15,12 @@ target_include_directories(${ATR_EXEC_NAME} PRIVATE
 
 # Link required internal libraries to the executable
 target_link_libraries(${ATR_EXEC_NAME} PRIVATE
+    nlohmann_json::nlohmann_json       
+    PahoMqttCpp::paho-mqttpp3 
+    Boost::system
+    Boost::thread
+    Boost::chrono
+    Threads::Threads
 )
 
 # Define any required compile-time macros for the target

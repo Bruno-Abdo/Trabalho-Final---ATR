@@ -24,8 +24,7 @@
                 // --- AI & Git tools ---
                 "GitHub.copilot",
                 "GitHub.copilot-chat",
-                "mhutchie.git-graph",
-                "eamodio.gitlens"
+                "mhutchie.git-graph"
             ],
             "settings": {
                 // --- Python ---

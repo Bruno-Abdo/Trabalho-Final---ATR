@@ -60,11 +60,15 @@ CPMAddPackage(
     "PAHO_WITH_MQTT_C ON"          # build bundled C lib; avoids find_package failure
     "PAHO_BUILD_STATIC ON"         # produce static lib (good for embedded)
     "PAHO_BUILD_SHARED OFF"
-    "PAHO_WITH_SSL ON"             # toggle as needed
+    "PAHO_WITH_SSL OFF"
     "PAHO_BUILD_EXAMPLES OFF"
     "PAHO_BUILD_SAMPLES OFF"
     "PAHO_BUILD_TESTS OFF"
 )
+
+# ------------------------------------ REQUIREMENTS ------------------------------------ #
+find_package(Boost REQUIRED COMPONENTS system thread chrono)
+find_package(Threads REQUIRED)
 
 # ------------------------------------ SUBDIRECTORIES ------------------------------------ #
 add_subdirectory(app)
