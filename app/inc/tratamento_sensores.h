@@ -3,9 +3,11 @@
 
 #include <string>
 #include <atomic>
+#include "buffer_circular_compartilhado.h"
 
-void tratamento_thread(const std::string &source_id,
+void tratamento_thread(int id,
                        int sleep_ms,
-                       std::atomic<bool> &running_flag);
+                       std::atomic<bool> &running_flag,
+                       SharedCircularBuffer &buffer);
 
 #endif // TRATAMENTO_SENSORES_H

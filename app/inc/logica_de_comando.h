@@ -3,9 +3,11 @@
 
 #include <string>
 #include <atomic>
+#include "buffer_circular_compartilhado.h"
 
-void comando_thread(const std::string &source_id,
-                   int sleep_ms,
-                   std::atomic<bool> &running_flag);
+void comando_thread(int id,
+                    int sleep_ms,
+                    std::atomic<bool> &running_flag,
+                    SharedCircularBuffer &buffer);
 
 #endif // LOGICA_DE_COMANDO_H

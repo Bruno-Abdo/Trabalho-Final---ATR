@@ -14,12 +14,16 @@
 // Boost Thread Library
 #include <boost/thread.hpp>
 
+// Configurations
+#include "config.hpp"
+
 #include "coletor_de_dados.h"
 #include "controle_de_navegacao.h"
 #include "logica_de_comando.h"
 #include "monitoramento_de_falhas.h"
 #include "planejamento_de_rota.h"
 #include "tratamento_sensores.h"
+#include "buffer_circular_compartilhado.h"
 
 // --- Configuration ---
 
@@ -105,6 +109,9 @@ void publisher_thread(
 
 int main()
 {
+    std::cout << "[Main] Starting application: " << project_name << " v" << project_version << std::endl;
+
+    SharedCircularBuffer buffer(BUFF_CAPACIDADE, BUFF_CONSUMIDORES);
     // Register signal handlers for clean shutdown
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
@@ -135,15 +142,14 @@ int main()
     std::cout << "Starting all threads..." << std::endl;
 
     // We pass std::ref(client) because the client is not copyable
-    boost::thread thread_a(publisher_thread, std::ref(client), TOPIC_A, "Thread-A", 2000);           // 2 sec interval
-    boost::thread thread_b(publisher_thread, std::ref(client), TOPIC_B, "Thread-B", 3000);           // 3 sec interval
-    boost::thread thread_c(coletor_thread, "Coletor-Thread", 5000, std::ref(g_running));             // 5 sec interval
-    boost::thread thread_d(controle_thread, "Controle-Thread", 7000, std::ref(g_running));           // 7 sec interval
-    boost::thread thread_e(comando_thread, "Logica-Thread", 6000, std::ref(g_running));               // 6 sec interval
-    boost::thread thread_f(monitoramento_thread, "Monitoramento-Thread", 8000, std::ref(g_running)); // 8 sec interval
-    boost::thread thread_g(planejamento_thread, "Planejamento-Thread", 9000, std::ref(g_running));   // 9 sec interval
-    boost::thread thread_h(tratamento_thread, "Tratamento-Thread", 1000, std::ref(g_running));       // 1 sec interval
-
+    boost::thread thread_a(publisher_thread, std::ref(client), TOPIC_A, "Thread-A", 2000);                                // 2 sec interval
+    boost::thread thread_b(publisher_thread, std::ref(client), TOPIC_B, "Thread-B", 3000);                                // 3 sec interval
+    boost::thread thread_c(coletor_thread, ID_COLETOR, SLEEP_MS_COLETOR, std::ref(g_running), std::ref(buffer));                   // 5 sec interval
+    boost::thread thread_d(controle_thread, ID_CONTROLE, SLEEP_MS_CONTROLE, std::ref(g_running), std::ref(buffer));                // 7 sec interval
+    boost::thread thread_e(comando_thread, ID_COMANDO, SLEEP_MS_COMANDO, std::ref(g_running), std::ref(buffer));                   // 6 sec interval
+    boost::thread thread_f(monitoramento_thread, ID_MONITORAMENTO, SLEEP_MS_MONITORAMENTO, std::ref(g_running), std::ref(buffer)); // 8 sec interval
+    boost::thread thread_g(planejamento_thread, ID_PLANEJAMENTO, SLEEP_MS_PLANEJAMENTO, std::ref(g_running), std::ref(buffer));    // 9 sec interval
+    boost::thread thread_h(tratamento_thread, ID_TRATAMENTO, SLEEP_MS_TRATAMENTO, std::ref(g_running), std::ref(buffer));          // 1 sec interval
     // --- Wait for Shutdown Signal ---
 
     // You can also loop here to check g_running

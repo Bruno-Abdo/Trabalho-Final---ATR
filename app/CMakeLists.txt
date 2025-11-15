@@ -12,11 +12,13 @@ add_executable(${ATR_EXEC_NAME}
     src/monitoramento_de_falhas.cpp
     src/planejamento_de_rota.cpp
     src/tratamento_sensores.cpp
+    src/buffer_circular_compartilhado.cpp
 )
 
 # Add include directories needed for this target (e.g., generated config headers)
 target_include_directories(${ATR_EXEC_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
+    ${CMAKE_BINARY_DIR}/app_config
 )
 
 # Link required internal libraries to the executable

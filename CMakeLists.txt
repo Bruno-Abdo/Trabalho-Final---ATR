@@ -4,9 +4,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # ------------------------------------ PROJECT DEFINITIONS ------------------------------------ #
 project(
-    atr
-    VERSION 0.0.1
-    LANGUAGES C CXX
+  atr
+  VERSION 0.1.0
+  LANGUAGES C CXX
 )
 
 # ------------------------------------ CPP/C CONFIG ------------------------------------ #
@@ -22,6 +22,9 @@ set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+configure_file(
+    "config/config.hpp.in" "${CMAKE_BINARY_DIR}/app_config/config.hpp"
+    ESCAPE_QUOTES)
 # ------------------------------------ CCACHE SUPPORT ------------------------------------ #
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)

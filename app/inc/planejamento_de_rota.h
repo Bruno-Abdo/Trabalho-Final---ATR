@@ -3,9 +3,11 @@
 
 #include <string>
 #include <atomic>
+#include "buffer_circular_compartilhado.h"
 
-void planejamento_thread(const std::string &source_id,
+void planejamento_thread(int id,
                          int sleep_ms,
-                         std::atomic<bool> &running_flag);
+                         std::atomic<bool> &running_flag,
+                         SharedCircularBuffer &buffer);
 
 #endif // PLANEJAMENTO_DE_ROTA_H

@@ -13,11 +13,12 @@
 #include <boost/thread.hpp>
 #include "controle_de_navegacao.h"
 
-void controle_thread(const std::string &source_id,
+void controle_thread(int id,
                      int sleep_ms,
-                     std::atomic<bool> &running_flag)
+                     std::atomic<bool> &running_flag,
+                     SharedCircularBuffer &buffer)
 {
-    std::cout << source_id << " is starting." << std::endl;
+    std::cout << "Controle " << id << " is starting." << std::endl;
     try
     {
         // Loop until the 'running' flag is set to false
@@ -25,7 +26,7 @@ void controle_thread(const std::string &source_id,
         {
 
             // This is the "work" - just printing to the log
-            std::cout << "[LOG] " << source_id << " is running..." << std::endl;
+            std::cout << "[LOG] " << "Controle " << id << " is running..." << std::endl;
 
             // Sleep, but allow interruption (for clean shutdown)
             boost::this_thread::sleep_for(boost::chrono::milliseconds(sleep_ms));
@@ -34,8 +35,8 @@ void controle_thread(const std::string &source_id,
     catch (const boost::thread_interrupted &)
     {
         // This exception is thrown when main calls thread.interrupt()
-        std::cout << source_id << " was interrupted." << std::endl;
+        std::cout << "Controle " << id << " was interrupted." << std::endl;
     }
 
-    std::cout << source_id << " is stopping." << std::endl;
+    std::cout << "Controle " << id << " is stopping." << std::endl;
 }
