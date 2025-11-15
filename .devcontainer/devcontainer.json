@@ -2,8 +2,8 @@
     "name": "ATR Dev C++ and Python",
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
-    "workspaceFolder": "/home/atr/workspace",
-    "remoteUser": "atr",
+    "workspaceFolder": "/home/ubuntu/workspace",
+    "remoteUser": "ubuntu",
     "forwardPorts": [
         8000
     ],

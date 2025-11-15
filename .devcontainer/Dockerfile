@@ -7,20 +7,10 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
-ENV PATH="/home/atr/.local/bin:${PATH}"
+ENV PATH="/home/ubuntu/.local/bin:${PATH}"
 
-ARG USERNAME=atr
-ARG UID=1001
-ARG GID=1001
-# Create user and setup permissions
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo ca-certificates tzdata curl lsb-release wget git openssh-client pkg-config unzip zip locales && \
-    if ! getent group "${GID}" >/dev/null; then groupadd -g "${GID}" "${USERNAME}"; fi \
-    && if ! id -u "${USERNAME}" >/dev/null 2>&1; then useradd -m -u "${UID}" -g "${GID}" -s /bin/bash "${USERNAME}"; fi \
-    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
-    && chmod 0440 /etc/sudoers.d/${USERNAME} \
-    && mkdir -p /home/${USERNAME}/workspace \
-    && chown -R ${UID}:${GID} /home/${USERNAME}
+    sudo ca-certificates tzdata curl lsb-release wget git openssh-client pkg-config unzip zip locales
 
 # --- Base OS + common tools ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -35,7 +25,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # C/C++ toolchain + build tools
     build-essential cmake ninja-build gdb lldb cppcheck ccache \
     libssl-dev liblz4-dev libre2-dev zlib1g-dev libcurl4-openssl-dev \
+    # Boost.Asio Library dependencies
     && rm -rf /var/lib/apt/lists/*
-
-USER ${USERNAME}
-WORKDIR /home/${USERNAME}/workspace
