@@ -6,11 +6,17 @@ set(ATR_EXEC_NAME atr)
 # Define the main executable and specify its source files
 add_executable(${ATR_EXEC_NAME}
     main.cpp
+    src/coletor_de_dados.cpp
+    src/controle_de_navegacao.cpp
+    src/logica_de_comando.cpp
+    src/monitoramento_de_falhas.cpp
+    src/planejamento_de_rota.cpp
+    src/tratamento_sensores.cpp
 )
 
 # Add include directories needed for this target (e.g., generated config headers)
 target_include_directories(${ATR_EXEC_NAME} PRIVATE
-
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
 )
 
 # Link required internal libraries to the executable

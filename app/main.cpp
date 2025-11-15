@@ -14,6 +14,13 @@
 // Boost Thread Library
 #include <boost/thread.hpp>
 
+#include "coletor_de_dados.h"
+#include "controle_de_navegacao.h"
+#include "logica_de_comando.h"
+#include "monitoramento_de_falhas.h"
+#include "planejamento_de_rota.h"
+#include "tratamento_sensores.h"
+
 // --- Configuration ---
 
 // The MQTT broker address. "mosquitto" is the service name
@@ -125,30 +132,47 @@ int main()
     }
 
     // --- Start the Boost Threads ---
-    std::cout << "Starting publisher threads..." << std::endl;
+    std::cout << "Starting all threads..." << std::endl;
 
     // We pass std::ref(client) because the client is not copyable
-    boost::thread thread_a(publisher_thread, std::ref(client), TOPIC_A, "Thread-A", 2000); // 2 sec interval
-    boost::thread thread_b(publisher_thread, std::ref(client), TOPIC_B, "Thread-B", 3000); // 3 sec interval
+    boost::thread thread_a(publisher_thread, std::ref(client), TOPIC_A, "Thread-A", 2000);           // 2 sec interval
+    boost::thread thread_b(publisher_thread, std::ref(client), TOPIC_B, "Thread-B", 3000);           // 3 sec interval
+    boost::thread thread_c(coletor_thread, "Coletor-Thread", 5000, std::ref(g_running));             // 5 sec interval
+    boost::thread thread_d(controle_thread, "Controle-Thread", 7000, std::ref(g_running));           // 7 sec interval
+    boost::thread thread_e(comando_thread, "Logica-Thread", 6000, std::ref(g_running));               // 6 sec interval
+    boost::thread thread_f(monitoramento_thread, "Monitoramento-Thread", 8000, std::ref(g_running)); // 8 sec interval
+    boost::thread thread_g(planejamento_thread, "Planejamento-Thread", 9000, std::ref(g_running));   // 9 sec interval
+    boost::thread thread_h(tratamento_thread, "Tratamento-Thread", 1000, std::ref(g_running));       // 1 sec interval
 
     // --- Wait for Shutdown Signal ---
 
     // You can also loop here to check g_running
     std::cout << "Publishing threads are running. Press Ctrl+C to stop." << std::endl;
     while (g_running)
-    {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
 
+    std::cout << "Shutdown signal received. Stopping threads..." << std::endl;
     // --- Clean Shutdown ---
 
     // Interrupt and join threads
     std::cout << "Interrupting threads..." << std::endl;
     thread_a.interrupt();
     thread_b.interrupt();
+    thread_c.interrupt();
+    thread_d.interrupt();
+    thread_e.interrupt();
+    thread_f.interrupt();
+    thread_g.interrupt();
+    thread_h.interrupt();
 
     thread_a.join();
     thread_b.join();
+    thread_c.join();
+    thread_d.join();
+    thread_e.join();
+    thread_f.join();
+    thread_g.join();
+    thread_h.join();
 
     std::cout << "All threads stopped." << std::endl;
 

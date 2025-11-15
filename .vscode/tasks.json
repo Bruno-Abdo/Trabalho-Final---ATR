@@ -26,7 +26,6 @@
             "label": "Run (Debug)",
             "type": "shell",
             "command": "./build/project_output/atr",
-            "dependsOn": "Compile (Debug)",
             "group": {
                 "kind": "test",
                 "isDefault": true
