@@ -124,7 +124,6 @@ class MqttPublisher:
             else:
                 # float -> int (mantendo ruído, mas discretizado)
                 out[name] = int(round(float(val)))
-        
         return out
 
     # ---------------------------------------------------------------------

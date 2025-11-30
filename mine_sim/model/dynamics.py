@@ -30,21 +30,21 @@ from .truck_state import TruckState
 # ---------------------------------------------------------------------------
 
 # Aceleração máxima física [m/s²] correspondente a o_aceleracao = ±100%.
-# Não é especificada no ATR; valor escolhido para dar dinâmica razoável. [referência necessária]
+# Não é especificada no ATR; valor escolhido para dar dinâmica razoável. 
 MAX_ACCEL_M_S2: Final[float] = 5.0
 
-# Velocidade máxima em módulo [m/s] (~54 km/h). [referência necessária]
+# Velocidade máxima em módulo [m/s] (~54 km/h). 
 MAX_SPEED_M_S: Final[float] = 15.0
 
 # Coeficiente de atrito/arrasto (1/s). Simula resistência do ar/rolagem,
-# fazendo o veículo desacelerar quando o acelerador é solto. [referência necessária]
+# fazendo o veículo desacelerar quando o acelerador é solto. 
 FRICTION_COEFF: Final[float] = 0.5
 
 # Zona morta de velocidade [m/s] e de comando de aceleração [%] para "parar" o veículo.
 SPEED_DEADBAND: Final[float] = 0.05
 THROTTLE_DEADBAND: Final[float] = 0.05
 
-# Taxa máxima de rotação [graus/s] para comando de direção extremo o_direcao = ±180. [referência necessária]
+# Taxa máxima de rotação [graus/s] para comando de direção extremo o_direcao = ±180. 
 MAX_STEER_RATE_DEG_S: Final[float] = 45.0
 
 # Temperatura ambiente [°C]. O documento define faixa [-100, 200] e limiares de
@@ -52,10 +52,9 @@ MAX_STEER_RATE_DEG_S: Final[float] = 45.0
 AMBIENT_TEMP_C: Final[float] = 25.0
 
 # Coeficientes térmicos: aquecimento por esforço e resfriamento passivo.
-# São parâmetros de simulação, não do documento. [referência necessária]
+# São parâmetros de simulação, não do documento. 
 HEATING_RATE: Final[float] = 10.0   # °C/s a 100% de esforço
 COOLING_RATE: Final[float] = 0.2    # 1/s (fator de decaimento térmico)
-
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares

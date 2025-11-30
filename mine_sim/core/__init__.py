@@ -26,6 +26,8 @@ from .simulator import (
 
 from .publisher import MqttPublisher
 
+from .actuator_client import ActuatorMqttClient
+
 __all__ = [
     # Configuração de ruído
     'NoiseConfig',
@@ -46,4 +48,7 @@ __all__ = [
     
     # Publisher MQTT
     'MqttPublisher',
+
+    # Cliente MQTT de atuadores
+    'ActuatorMqttClient',
 ]

@@ -21,6 +21,7 @@ from model.truck_state import TruckState
 from core.simulator import Simulator, SimulatorConfig
 from core.publisher import MqttPublisher
 from ui.main_window import MainWindow
+from core.actuator_client import ActuatorMqttClient
 
 
 # Configuração de logging
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 # Configurações padrão
-MQTT_HOST = "localhost"
+MQTT_HOST = "mosquitto"
 MQTT_PORT = 1883
 TRUCK_ID = "001"
 SIMULATION_PERIOD_MS = 50  # 50 ms (20 Hz)
@@ -89,14 +90,19 @@ def main() -> int:
     
     # Registrar callback do publisher no simulador
     simulator.register_callback(publisher.make_sim_callback(TRUCK_ID))
-    
+
+    # Subscriber de atuadores no MQTT
+    actuator_client = ActuatorMqttClient(truck_id=TRUCK_ID,host="mosquitto",port=1883)
+    actuator_client.connect(start_loop=True)
+
+    # Conecta fonte de atuadores do simulador
+    simulator.set_actuator_source(actuator_client.get_latest)   
+
     # 3. Criar janela principal
     main_window = MainWindow(simulator)
     
     # Registrar callback da UI no simulador
-    simulator.register_callback(
-        lambda state, sensors: main_window.update_display(state, sensors)
-    )
+    simulator.register_callback(lambda state, sensors: main_window.update_display(state, sensors))
     
     # 4. Configurar timer para chamar simulator.step() periodicamente
     timer = QTimer()
@@ -118,7 +124,5 @@ def main() -> int:
     
     return exit_code
 
-
 if __name__ == "__main__":
     sys.exit(main())
-
