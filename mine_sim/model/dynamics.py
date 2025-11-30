@@ -4,7 +4,7 @@ Equações de diferenças para a dinâmica do caminhão na Simulação da Mina.
 Atende ao requisito do documento "2025_2 - ATR - Trabalho Final.pdf" de
 gerar valores de posição a partir dos atuadores de aceleração e direção,
 usando uma equação diferencial (ou de diferenças) para simular a dinâmica
-(inércia) de movimentação do caminhão.:contentReference[oaicite:7]{index=7}
+(inércia) de movimentação do caminhão
 
 Interface pública:
     - update_position(state, dt)
@@ -48,7 +48,7 @@ THROTTLE_DEADBAND: Final[float] = 0.05
 MAX_STEER_RATE_DEG_S: Final[float] = 45.0
 
 # Temperatura ambiente [°C]. O documento define faixa [-100, 200] e limiares de
-# alerta/defeito, mas não a dinâmica térmica; adotamos 25 °C como referência.:contentReference[oaicite:8]{index=8}
+# alerta/defeito, mas não a dinâmica térmica; adotamos 25 °C como referência.
 AMBIENT_TEMP_C: Final[float] = 25.0
 
 # Coeficientes térmicos: aquecimento por esforço e resfriamento passivo.
@@ -183,7 +183,7 @@ def update_temperature(
         T_{k+1}    = T_k + heating - cooling
 
     A temperatura é uma das variáveis monitoradas na Tabela 1 e usada
-    pela lógica de falhas (limiares de alerta e defeito).:contentReference[oaicite:9]{index=9}
+    pela lógica de falhas (limiares de alerta e defeito).
 
     Parâmetros:
         state  : TruckState a ser atualizado.

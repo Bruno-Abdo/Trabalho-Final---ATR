@@ -36,6 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # General graphics/font libs
     libgl1 libfontconfig1 libfreetype6 libglib2.0-0 fonts-dejavu-core \
     libssl-dev liblz4-dev libre2-dev zlib1g-dev libcurl4-openssl-dev \
+    # General PyQt6 dependencies
+    libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libdbus-1-3 xcb-cursor0 \
     # C++ Libraries
     libboost-all-dev \
     nlohmann-json3-dev \
