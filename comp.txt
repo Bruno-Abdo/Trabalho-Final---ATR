@@ -370,7 +370,7 @@ class TruckPublisher(QObject):
         topic = f"atr/mine/truck/{truck_id}/sensors"
         
         # quantize=True força conversão para int/bool conforme Tabela 1
-        data = state.get_sensor_dict(quantize=True)
+        data = state.get_sensor_dict()
         
         try:
             payload = json.dumps(data)

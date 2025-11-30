@@ -72,29 +72,18 @@ class TruckState:
         """Reconstrói estado a partir de dicionário."""
         return cls(**data)
 
-    def get_sensor_dict(self, quantize: bool = False) -> Dict[str, Any]:
+    def get_sensor_dict(self) -> Dict[str, Any]:
         """
         Retorna apenas os dados de sensores definidos na Tabela 1.
         
         Args:
             quantize: Se True, arredonda floats para int conforme especificação da Tabela 1.
         """
-        if not quantize:
-            return {
-                "i_posicao_x": self.i_posicao_x,
-                "i_posicao_y": self.i_posicao_y,
-                "i_angulo_x": self.i_angulo_x,
-                "i_temperatura": self.i_temperatura,
-                "i_falha_eletrica": self.i_falha_eletrica,
-                "i_falha_hidraulica": self.i_falha_hidraulica,
-            }
-        
-        # Versão conforme Tabela 1 (inteiros)
         return {
-            "i_posicao_x": int(round(self.i_posicao_x)),
-            "i_posicao_y": int(round(self.i_posicao_y)),
-            "i_angulo_x": int(round(self.i_angulo_x)),
-            "i_temperatura": int(round(self.i_temperatura)),
-            "i_falha_eletrica": bool(self.i_falha_eletrica),
-            "i_falha_hidraulica": bool(self.i_falha_hidraulica),
+            "i_posicao_x": self.i_posicao_x,
+            "i_posicao_y": self.i_posicao_y,
+            "i_angulo_x": self.i_angulo_x,
+            "i_temperatura": self.i_temperatura,
+            "i_falha_eletrica": self.i_falha_eletrica,
+            "i_falha_hidraulica": self.i_falha_hidraulica,
         }

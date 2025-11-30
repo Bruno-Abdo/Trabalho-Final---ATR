@@ -110,6 +110,23 @@ class MqttPublisher:
 
         self._connected: bool = False
 
+    @staticmethod
+    def _quantize_sensors(sensors: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Converte o dicionário de sensores contínuos para ints/bools
+        conforme Tabela 1.
+        """
+        out: Dict[str, Any] = {}
+
+        for name, val in sensors.items():
+            if name in ("i_falha_eletrica", "i_falha_hidraulica"):
+                out[name] = bool(val)
+            else:
+                # float -> int (mantendo ruído, mas discretizado)
+                out[name] = int(round(float(val)))
+        
+        return out
+
     # ---------------------------------------------------------------------
     # Callbacks internos do cliente MQTT
     # ---------------------------------------------------------------------
@@ -175,11 +192,12 @@ class MqttPublisher:
             return
 
         topic = f"{self.base_topic}/{truck_id}/sensors"
+        quantized_sensors: Dict[str, Any] = self._quantize_sensors(sensors)
 
         payload_dict: Dict[str, Any] = {
             "truck_id": truck_id,
             "timestamp": time.time(),
-            "sensors": sensors,
+            "sensors": quantized_sensors,
         }
 
         try:

@@ -7,7 +7,6 @@ from core.publisher import MqttPublisher
 def main() -> None:
     # 1) Instancia núcleo de simulação e publisher MQTT
     sim = Simulator()  # usa SimulatorConfig padrão (dt_default = 0.05 s, etc.)
-    sim.set_quantize(True)
     pub = MqttPublisher(host="mosquitto", port=1883)
 
     # 2) Conecta ao broker MQTT (loop de rede em thread própria)

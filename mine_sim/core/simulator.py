@@ -44,7 +44,6 @@ class SimulatorConfig:
     """
     dt_default: float = 0.05  # 50 ms
     ambient_temp: float = AMBIENT_TEMP_C
-    quantize: bool = False
 
 
 class Simulator:
@@ -147,13 +146,6 @@ class Simulator:
         for cfg in self._noise_configs.values():
             cfg.enabled = enabled
 
-    def set_quantize(self, quantize: bool) -> None:
-        """
-        Define se as leituras exportadas devem ser quantizadas para int,
-        alinhadas com a Tabela 1 do documento
-        """
-        self.config.quantize = quantize
-
     # ----------------------------------------------------------------------
     # Registro de callbacks
     # ----------------------------------------------------------------------
@@ -215,7 +207,7 @@ class Simulator:
         self.sim_time += step_dt
 
         # 3) Gera mapa de sensores com ruído (e, opcionalmente, quantizados)
-        sensors_noisy = self._compute_noisy_sensors_dict(quantize=self.config.quantize)
+        sensors_noisy = self._compute_noisy_sensors_dict()
 
         # 4) Notifica observadores
         for cb in list(self._callbacks):
@@ -225,7 +217,7 @@ class Simulator:
     # Geração de sensores com ruído
     # ----------------------------------------------------------------------
 
-    def _compute_noisy_sensors_dict(self, *, quantize: bool) -> Dict[str, Any]:
+    def _compute_noisy_sensors_dict(self) -> Dict[str, Any]:
         """
         Gera um dicionário com os sensores definidos na Tabela 1,
         adicionando ruído gaussiano de média nula às grandezas contínuas.
@@ -239,7 +231,7 @@ class Simulator:
             - i_falha_hidraulica (bool, sem ruído)
         """
         # Sensores "ideais" sem ruído
-        base = self.state.get_sensor_dict(quantize=False)
+        base = self.state.get_sensor_dict()
 
         result: Dict[str, Any] = {}
 
@@ -253,13 +245,4 @@ class Simulator:
             else:
                 # Flags de falha (bool) e outros campos preservam valor exato
                 result[name] = value
-
-        # Se for para quantizar, usamos a mesma lógica de quantização do TruckState
-        if quantize:
-            quantized = self.state.get_sensor_dict(quantize=True)
-            for key, q_val in quantized.items():
-                # Substitui valores numéricos pela versão quantizada
-                result[key] = q_val
-
         return result
-
