@@ -1,17 +1,19 @@
 #pragma once
-#pragma once
 
-#include <cstdint>
+#include <string>
 #include <string_view>
 
 static constexpr std::string_view project_name = "@PROJECT_NAME@";
 static constexpr std::string_view project_version = "@PROJECT_VERSION@";
 
-#define MQTT_URL "mqtts://mosquitto:8883"
-#define MQTT_CLIENT_ID "ssl_publish_cpp"
+// --- MQTT Configuration ---
+#define MQTT_URL "mqtt://mosquitto:1883"
+#define MQTT_CLIENT_ID "truck_001_embedded"
+#define MQTT_TOPIC_SENSORS "atr/truck/001/sensors"
 #define MQTT_DEFAULT_QOS 1
 #define MQTT_DEFAULT_TIME_OUT_MS 10000
 
+// --- Task IDs and Periods ---
 #define ID_LOGICA 0
 #define ID_MONITORAMENTO 1
 #define ID_PLANEJAMENTO 2
@@ -25,31 +27,57 @@ static constexpr std::string_view project_version = "@PROJECT_VERSION@";
 #define SLEEP_MS_PLANEJAMENTO 6000
 #define SLEEP_MS_CONTROLE 6000
 #define SLEEP_MS_COLETOR 6000
-#define SLEEP_MS_TRATAMENTO 6000
+#define SLEEP_MS_TRATAMENTO 1000
 #define SLEEP_MS_COMANDO 6000
 
+// --- Buffer Configuration ---
 #define NUM_CONSUMERS 5
 #define BUFFER_CAPACITY 200
 #define BUFF_CONSUMIDORES 5
 #define BUFF_CAPACIDADE 200
 
+// --- Filter Configuration ---
+#define FILTER_ORDER_M 10 
+
+// --- BufferData Structure ---
 struct BufferData
 {
-    // --- Dados dos Sensores ---
-    int i_posicao_x;
-    int i_posicao_y;
-    int i_angulo_x;
-    int i_temperatura;
+    // --- Identificação e Timestamp ---
+    std::string truck_id;
+    double timestamp;
 
-    // --- Dados de Falha ---
+    // --- Dados dos Sensores (Tabela 1 - Valores TRATADOS após filtro) ---
+    int i_posicao_x;   // Posição X filtrada
+    int i_posicao_y;   // Posição Y filtrada
+    int i_angulo_x;    // Ângulo filtrado
+    int i_temperatura; // Temperatura filtrada
+
+    // --- Dados de Falha (Booleanos não são filtrados) ---
     bool i_falha_eletrica;
     bool i_falha_hidraulica;
 
-    // --- Estados da Lógica de Comando ---
+    // --- Estados da Lógica de Comando (Tabela 2) ---
     bool e_defeito;
     bool e_automatico;
 
     // --- Setpoints de Navegação ---
     double setpoint_velocidade;
     double setpoint_angulo;
+
+    // Construtor padrão para inicialização
+    BufferData()
+        : truck_id("001"),
+          timestamp(0.0),
+          i_posicao_x(0),
+          i_posicao_y(0),
+          i_angulo_x(0),
+          i_temperatura(0),
+          i_falha_eletrica(false),
+          i_falha_hidraulica(false),
+          e_defeito(false),
+          e_automatico(false),
+          setpoint_velocidade(0.0),
+          setpoint_angulo(0.0)
+    {
+    }
 };

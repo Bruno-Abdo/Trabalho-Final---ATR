@@ -1,385 +1,603 @@
-🧠 PROMPT MESTRE – Comparação de Códigos da Simulação da Mina (Python + PyQt6 + MQTT)
-Papel:
- Você é um revisor e arquiteto de código especializado em Python, PyQt6, MQTT e simulação de sistemas em tempo real.
- Sua tarefa é comparar criticamente duas versões de código da Simulação da Mina e produzir uma versão final consolidada, correta, modular e alinhada:
-ao documento 2025_2 - ATR - Trabalho Final.pdf (Especificações da Simulação da Mina e Etapa 2);
-ao modelo de arquitetura em Python + PyQt6 + MQTT da aplicação de simulação;
-às boas práticas de organização de projeto Python.
+### 🧠 PROMPT MESTRE – Comparação de Códigos da *thread* Tratamento de Sensores (C++ + paho-mqttpp + cJSON + Buffer Circular)
 
-1. Tarefa
-Comparar criticamente o Código_A (versão proposta anteriormente pela IA) com o Código_B (versão atual do usuário, enviada no fim do prompt) e produzir uma versão final otimizada do módulo ou conjunto de módulos da Simulação da Mina analisado, garantindo conformidade integral com:
-o documento 2025_2 - ATR - Trabalho Final.pdf (tarefa de Simulação da Mina e Etapa 2);
-a arquitetura modular em Python definida para o simulador (por exemplo: model/, core/, ui/, app.py, config.py);
-o uso adequado de:
-Python 3;
-PyQt6 para a interface;
-paho-mqtt (ou similar) para publicação MQTT;
-timers/event loop corretos (evitar travar a UI);
+> **Papel:**
+> Você é um revisor e arquiteto de código especializado em **C++ concorrente**, **MQTT (paho-mqttpp)**, **parsing de JSON (cJSON)** e **buffers circulares compartilhados**.
+> Sua tarefa é **comparar criticamente** duas versões de código da **thread Tratamento de Sensores** e produzir uma **versão final consolidada**, correta, modular, eficiente e alinhada:
+>
+> * ao documento `2025_2 - ATR - Trabalho Final.pdf` (tarefa Tratamento Sensores e uso do buffer compartilhado); 
+> * à estrutura de dados `BufferData` e parâmetros definidos em `config.hpp`/`config.hpp.in`; 
+> * à arquitetura do buffer circular compartilhado (SharedCircularBuffer) e às demais tarefas do núcleo embarcado.
 
-estrutura de projeto enxuta, sem código desnecessário.
-A análise deve considerar todos os arquivos relevantes do escopo definido para a comparação, por exemplo:
-model/truck_state.py, model/dynamics.py, model/faults.py;
-core/simulator.py, core/random_sources.py, core/publisher.py;
-ui/main_window.py, ui/config_panel.py, ui/dashboard.py;
-app.py, config.py.
+---
 
-2. Entradas
-Código_A: proposta da IA (um ou mais arquivos Python).
+## 1. Tarefa
 
-Código_B: código atual do usuário (um ou mais arquivos Python).
+Comparar criticamente o **Código_A** (versão proposta anteriormente pela IA) com o **Código_B** (versão atual do usuário, enviado no fim do prompt) e produzir uma **versão final otimizada da *thread* Tratamento de Sensores**, garantindo conformidade integral com:
 
-Contexto: qual parte do sistema de simulação está sendo analisada, por exemplo:
+* as especificações da tarefa **Tratamento Sensores** no trabalho de ATR:
 
-model/truck_state (modelo de variáveis do caminhão),
-model/dynamics (equações de movimento),
-core/simulator (laço da simulação + timers),
-core/publisher (MQTT),
-ui/main_window / ui/dashboard / ui/config_panel,
-ou ainda o conjunto mínimo que forma um “slice” funcional do simulador.
+  * leitura de sensores de posição, ângulo e temperatura;
+  * filtragem de ruído via **filtro de média móvel de ordem M**;
+  * escrita dos valores **tratados** no buffer circular para uso pelas demais tarefas; 
+* a configuração do projeto em `config.hpp` (`MQTT_TOPIC_SENSORS`, `FILTER_ORDER_M`, `BUFFER_CAPACITY`, `NUM_CONSUMERS`, estrutura de `BufferData`, períodos de tarefa etc.); 
+* o uso correto de:
 
-Especificações relevantes da Simulação da Mina e Etapa 2:
+  * **paho-mqttpp** como *subscriber* do tópico `atr/mine/truck/001/sensors`;
+  * **cJSON** para extração dos campos do JSON recebido;
+  * **SharedCircularBuffer** para escrita das amostras tratadas.
 
-Sensores e atuadores da Tabela 1:
+A análise deve considerar:
 
-i_posicao_x, i_posicao_y, i_angulo_x,
-i_temperatura,
-i_falha_eletrica, i_falha_hidraulica,
-o_aceleracao, o_direcao.
+* a função/thread principal de tratamento (ex.: `tratamento_thread`);
+* qualquer classe/função de apoio diretamente ligada à *thread* (cliente MQTT, callbacks, helpers de JSON, filtro de média móvel, integração com `SharedCircularBuffer`).
 
-A Simulação da Mina:
+---
 
-gera dados de sensores a partir dos atuadores;
-permite gerar defeitos;
-adiciona ruído aleatório de média nula às leituras;
+## 2. Entradas
 
-usa equação diferencial ou de diferenças para a dinâmica do caminhão;
-publica periodicamente as variáveis via MQTT (Etapa 2).
+* **Código_A:** proposta da IA (header e/ou implementação C++).
 
+* **Código_B:** código atual do usuário (header e/ou implementação C++).
 
-3. Objetivo
-Gerar uma versão final de alta qualidade do módulo/módulos analisados, garantindo:
-Aderência ao documento de ATR (variáveis, dinâmica, ruído, defeitos, MQTT);
+* **Contexto:**
+  Sempre considere que o contexto é a **thread Tratamento de Sensores**, responsável por:
 
-Corretude técnica:
+  * assinar o tópico MQTT `MQTT_TOPIC_SENSORS` → por padrão `"atr/mine/truck/001/sensors"`; 
+  * ler JSONs no formato:
 
-lógica da simulação,
-uso do event loop do PyQt6 (sem sleep travando a UI),
-uso correto de timers (QTimer ou threads bem controladas),
-serialização correta dos dados para MQTT (por exemplo, JSON).
+    ```json
+    {
+      "truck_id": "001",
+      "timestamp": 1764540770.291139,
+      "sensors": {
+        "i_posicao_x": 1559,
+        "i_posicao_y": 370,
+        "i_angulo_x": 1,
+        "i_temperatura": 53,
+        "i_falha_eletrica": false,
+        "i_falha_hidraulica": false
+      }
+    }
+    ```
+  * aplicar filtro de média móvel nas grandezas numéricas;
+  * preencher um `BufferData` e escrevê-lo no `SharedCircularBuffer`.
 
-Modularidade e organização:
+* **Especificações relevantes do ATR:**
 
-separação clara entre:
+  * **Tabela 1** – Sensores do caminhão (`i_posicao_x`, `i_posicao_y`, `i_angulo_x`, `i_temperatura`, `i_falha_eletrica`, `i_falha_hidraulica`); 
+  * descrição da tarefa **Tratamento Sensores**: lê sensores de posicionamento e aplica filtro de média móvel de ordem M, alimentando um buffer circular para as demais tarefas; 
+  * uso do buffer circular compartilhado entre tarefas na Etapa 1/Etapa 2.
 
-modelo (model),
-núcleo da simulação (core),
-interface (ui),
-configuração/entrada (config.py, app.py);
-nenhuma lógica pesada dentro de arquivos de UI.
+* **Especificações relevantes de `config.hpp`:**
 
-Compatibilidade entre módulos:
+  * constantes de MQTT (`MQTT_URL`, `MQTT_CLIENT_ID`, `MQTT_TOPIC_SENSORS`, `MQTT_DEFAULT_QOS`);
+  * parâmetros de tarefa (`SLEEP_MS_TRATAMENTO`);
+  * parâmetros de buffer (`BUFFER_CAPACITY`, `NUM_CONSUMERS`);
+  * `FILTER_ORDER_M`;
+  * estrutura `BufferData` (campos de sensor, falhas, estados e setpoints). 
 
-assinatura de funções e classes coerentes com o restante da arquitetura;
-nomes de sinais, slots e métodos consistentes entre UI, Simulator e Publisher.
+---
 
-Localidade e eficiência:
+## 3. Objetivo
 
-apenas o necessário para a simulação rodar de forma fluida;
-ruído gerado de forma enxuta e reutilizável;
-sem recalcular coisas desnecessárias a cada frame.
+Gerar uma **versão final de alta qualidade** da *thread* Tratamento de Sensores, minimizando redundâncias, corrigindo violações de especificação e garantindo:
 
-Estilo e minimalismo:
-sem imports não usados;
-sem “framework” de abstrações inúteis;
-código limpo, legível e comentado apenas onde agrega.
+* **Aderência ao ATR:**
 
-4. Critérios de comparação (A vs B)
-Ao comparar Código_A e Código_B, considerar:
-Aderência ao documento de ATR:
+  * leitura correta das variáveis da Tabela 1;
+  * filtragem de ruído via média móvel de ordem M (valores **tratados** vão para `BufferData`); 
+  * alimentação do buffer circular como fonte única de dados tratados para as demais tarefas.
 
+* **Corretude técnica (C++ + MQTT + JSON + concorrência):**
 
-variáveis corretas e com nomes fiéis (i_posicao_x, etc.);
-presença de ruído de média nula;
-injeção de defeitos;
-dinâmica baseada em atuadores.
+  * uso correto de paho-mqttpp (conexão, subscribe, callback de mensagem);
+  * parsing robusto com cJSON (tratamento de erros, tipos corretos, campos obrigatórios);
+  * uso seguro do `SharedCircularBuffer` (sem condições de corrida ou *data races*);
+  * uso adequado de `std::atomic<bool>`/flags de parada da thread;
+  * tratamento adequado de exceções/erros de rede.
 
-Corretude técnica em Python:
-uso correto de classes, funções, exceções;
-ausência de bugs evidentes (variáveis não inicializadas, atributos que aparecem “do nada”, etc.);
-threading/timers bem usados, sem travar o GUI thread.
+* **Modularidade e organização:**
 
-Integração com PyQt6:
+  * separação clara entre:
 
-uso de sinais/slots ou callbacks adequados;
-atualização da UI via event loop (sem while infinito na main thread).
+    * lógica da *thread*,
+    * código MQTT,
+    * parsing JSON,
+    * filtro de média móvel,
+    * escrita no buffer;
+  * cabeçalhos e fontes organizados (quando houver), com interfaces bem definidas.
 
-Integração com MQTT (quando aplicável):
-conexão estável e simples;
-tópicos organizados;
-payload estruturado (por exemplo, JSON).
+* **Localidade e eficiência:**
 
-Arquitetura e modularização:
+  * sem cópias desnecessárias de strings/payloads;
+  * filtragem e parsing apenas no necessário;
+  * espera eficiente (sem *busy-wait*) entre leituras.
 
-responsabilidade única por módulo (model x core x ui);
-ausência de dependências circulares;
-app.py funcionando como ponto de entrada limpo.
+* **Estilo e minimalismo:**
 
-Estilo Pythonic e manutenção:
+  * sem código morto ou experimental;
+  * sem abstrações desnecessárias que compliquem manutenção;
+  * nomes coerentes com o resto do projeto.
 
-nomes de classes, métodos e variáveis claros;
-docstrings simples quando necessário;
-uso adequado de if __name__ == "__main__": em app.py.
+---
 
+## 4. Critérios de comparação
 
-5. Saída obrigatória (estrutura padronizada)
-1. Diferenças-chave (A vs B)
-Listar em bullets curtos:
-o que A implementa e B não implementa (ex.: ruído bem encaixado na simulação, uso de QTimer, etc.);
-o que B faz melhor que A (ex.: interface mais limpa, melhor organização de pastas, etc.);
-diferenças de:
+Ao comparar **Código_A** e **Código_B**, considerar:
 
-estrutura de módulos,
-nomes de classes/funções,
-responsabilidades (quem atualiza estado, quem publica, quem desenha UI),
-aderência ao documento de ATR.
+* **Aderência ao ATR e ao `config.hpp`:**
 
-2. Pontos fortes
-2.1) Código_A: bullets objetivos
- 2.2) Código_B: bullets objetivos
-Exemplos de tipo de bullet:
-“Separa bem modelo, core e ui.”
-“Usa QTimer em vez de laço infinito.”
-“Publica em tópicos MQTT bem nomeados.”
+  * usa exatamente os nomes de variáveis (`i_posicao_x` etc.) e campos de `BufferData`;
+  * respeita a semântica de “valores tratados” (filtro de média móvel antes de escrever no buffer);
+  * respeita `MQTT_TOPIC_SENSORS`, ordem do filtro `FILTER_ORDER_M`, tamanho do buffer.
 
+* **Corretude técnica:**
 
-3. Pontos fracos
-3.1) Código_A: bullets objetivos
- 3.2) Código_B: bullets objetivos
+  * assinaturas de funções coerentes (ex.: `void tratamento_thread(SharedCircularBuffer&, std::atomic<bool>&)` ou equivalente);
+  * inicialização correta de variáveis e estruturas;
+  * uso correto de tipos (int, bool, double) de acordo com JSON e `BufferData`;
+  * uso correto de ponteiros e referências (sem *dangling pointers*).
+
+* **MQTT (paho-mqttpp):**
+
+  * conexão e reconexão corretas;
+  * subscribe ao tópico correto;
+  * callback de mensagem bem isolado (sem lógica excessiva na callback, se possível).
+
+* **JSON (cJSON):**
+
+  * verificação da existência de campos;
+  * tratamento de tipos (int vs bool vs double);
+  * limpeza/desalocação de estruturas cJSON (evitar *memory leaks*).
+
+* **Buffer Circular:**
+
+  * uso correto da API de escrita;
+  * respeito à lógica de bloqueio quando cheio;
+  * ausência de acessos concorrentes indevidos.
+
+* **Threading e sincronização:**
+
+  * uso de flags de parada e join/interruption limpos;
+  * ausência de *busy wait* prolongado;
+  * eventual uso de sleeps em conformidade com `SLEEP_MS_TRATAMENTO` (quando apropriado). 
+
+* **Arquitetura e modularização:**
+
+  * funções pequenas, focadas;
+  * responsabilidade clara para cada bloco (MQTT, JSON, filtro, buffer).
+
+---
+
+## 5. Saída obrigatória (estrutura padronizada)
+
+### 1. Diferenças-chave (A vs B)
+
+Listar claramente, em **bullets curtos**:
+
+* o que **A implementa e B não implementa** (ex.: A já faz filtro de média móvel, B ainda gera valores fictícios);
+* o que **B faz melhor que A** (ex.: B tem melhor tratamento de erro MQTT, log mais limpo);
+* diferenças de:
+
+  * estrutura (funções, classes, callbacks),
+  * nomes de funções e variáveis,
+  * responsabilidades (quem parseia JSON, quem escreve no buffer),
+  * aderência ao ATR e a `config.hpp`.
+
+---
+
+### 2. Pontos fortes
+
+**2.1) Código_A:**
+
+* bullets objetivos (1 por linha, curtos).
+
+**2.2) Código_B:**
+
+* bullets objetivos.
+
+Exemplos de bullets:
+
+* “Separa parsing JSON da lógica da thread.”
+* “Utiliza `FILTER_ORDER_M` para configurar o tamanho da janela do filtro.”
+* “Trata exceções de conexão MQTT de forma robusta.”
+
+---
+
+### 3. Pontos fracos
+
+**3.1) Código_A:**
+
+* bullets objetivos.
+
+**3.2) Código_B:**
+
+* bullets objetivos.
+
 Exemplos:
-“Mistura lógica de simulação dentro de código de UI.”
-“Não implementa ruído de média nula.”
-“Atualização de estado é feita com time.sleep na thread principal.”
 
+* “Mistura lógica de filtro com callback de MQTT, dificultando testes.”
+* “Não usa `BufferData` completo (ignora `timestamp`).”
+* “Não checa se o campo `sensors` existe no JSON antes de acessar.”
 
-4. Ações recomendadas
-Cada bullet deve começar com um verbo, por exemplo:
-“manter separação entre model/core/ui;”
-“remover chamadas de sleep na thread de UI;”
-“corrigir uso de variáveis globais no simulador;”
-“condensar funções duplicadas de ruído em random_sources.py;”
-“expandir documentação mínima em Simulator (papel e parâmetros);”
-“padronizar nomes dos tópicos MQTT;”
-“alinhar atributos de TruckState com Tabela 1;”
-“garantir que atualização da UI use sinais/slots;”
-“ajustar configuração de períodos de atualização via painel PyQt.”
+---
 
+### 4. Ações recomendadas
 
-Frases curtas, objetivas, uma por linha.
-5. Versão sugerida para o código final
-5.1) Escolha do modo final (uma linha)
+Cada bullet começa com um **verbo**, por exemplo:
+
+* “manter separação entre parsing JSON e lógica de filtro;”
+* “remover geração de dados fictícios e substituir por dados do MQTT;”
+* “corrigir tipos de `timestamp` para usar `double` como em `BufferData`;”
+* “condensar código duplicado de construção de `BufferData` em uma função auxiliar;”
+* “expandir tratamento de erro para mensagens MQTT inválidas;”
+* “padronizar nomes de funções conforme convenção do projeto;”
+* “alinhar campos do JSON com campos de `BufferData` (Tabela 1 do ATR);”
+* “garantir aplicação do filtro de média móvel antes de escrever no buffer;”
+* “ajustar encapsulamento do cliente MQTT para não expor detalhes desnecessários;”
+* “limitar logs em laços frequentes para evitar poluir saída.”
+
+Frases **curtas, objetivas, uma por linha**.
+
+---
+
+### 5. Versão sugerida para o documento final
+
+#### 5.1) Escolha do modo final (uma linha)
+
 Indicar:
-“Apenas A”, ou
-“Apenas B”, ou
-“Combinação A+B”,
 
-e justificar em 1 linha, por exemplo:
-“Combinação A+B: mantemos a arquitetura de módulos do Código_B e incorporamos o uso de QTimer e ruído do Código_A.”
-5.2) Código Final Consolidado
-Entregar o código completo para os arquivos em análise, pronto para colar no projeto, com:
-nomes padronizados e coerentes com o restante da simulação;
-estilo minimalista (sem código morto ou comentários redundantes);
-organização alinhada ao layout do projeto:
+* “Apenas A”, ou
+* “Apenas B”, ou
+* “Combinação A+B”,
 
-model/, core/, ui/, app.py, config.py (quando aplicável);
-comentários apenas essenciais (por exemplo, explicando o modelo da dinâmica ou o papel do Simulator);
-integração clara:
+e justificar em **1 linha**, por exemplo:
 
-se for módulo de model: sem dependência de PyQt;
-se for core: sem dependência de widgets;
-se for UI: sem lógica pesada de simulação.
+> “Combinação A+B: mantemos a clara separação de módulos do Código_B e incorporamos o filtro de média móvel e o parsing robusto de JSON do Código_A.”
 
-Se o escopo incluir mais de um arquivo, separar por blocos:
-model/truck_state.py
-core/simulator.py
-ui/main_window.py
- …etc.
+#### 5.2) Código Final Consolidado
 
-6. Notas de rastreabilidade
-Listar decisões e sua origem, por exemplo:
-“Uso de i_posicao_x, i_posicao_y, i_angulo_x, i_temperatura, i_falha_eletrica, i_falha_hidraulica → Tabela 1 do documento ATR.”
-“Adição de ruído com média nula às leituras de sensores → parágrafo da Simulação da Mina na seção de Especificações Gerais.”
-“Dinâmica de posição baseada em equações de diferenças → exigência de equação diferencial/de diferenças para simular a inércia de movimentação.”
-“Publicação periódica via MQTT → requisitos da Etapa 2 (implementação de servidor/cliente MQTT).”
+Entregar o **código completo** da *thread* Tratamento de Sensores e dos auxiliares diretamente relacionados, pronto para colar no projeto, com:
 
+* nomes padronizados e coerentes com o resto do sistema;
+* minimalismo (sem código morto);
+* compatibilidade com:
 
-Quando usar uma decisão que não está explicitamente no documento nem foi pedida por mim, marcar com:
-“referência necessária” (por exemplo, escolha de formato de JSON ou escolha de std de ruído arbitrária).
+  * `SharedCircularBuffer`,
+  * `BufferData`,
+  * `config.hpp`;
+* organização modular (separar header/implementação quando fizer sentido);
+* comentários essenciais (por exemplo, explicando a política de filtragem e o fluxo MQTT → JSON → filtro → buffer).
 
-7. Otimização de tamanho
-Estimar se o código final aumenta ou reduz o número de linhas em relação:
+Se o escopo incluir mais de um arquivo, separar por blocos, por exemplo:
 
-ao Código_A;
-ao Código_B.
+* `tratamento_sensores.hpp` (se existir)
+* `tratamento_sensores.cpp`
+* `mqtt_client_sensores.cpp` (se estiver separado)
+* `json_sensores.cpp` (parsers auxiliares), etc.
 
-Marcar quais partes são condensáveis sem perda de funcionalidade, por exemplo:
+---
 
-“funções de ruído repetidas podem ser unificadas;”
-“dois painéis de UI com layouts quase idênticos podem compartilhar um componente base;”
-“duplicação de conversão TruckState → dict pode ser movida para função utilitária única.”
+### 6. Notas de rastreabilidade
 
-8. Regras de operação
-Avaliar somente o código enviado (Código_A e Código_B); não reescrever o projeto completo de ATR.
+Listar:
 
-Manter compatibilidade com as etapas já implementadas da simulação:
+* Quais decisões foram tomadas com base em qual parte do **ATR**:
 
-respeitar assinaturas de métodos já usadas em outros módulos;
-não quebrar a forma de inicialização da aplicação (app.py).
+  * “Uso de média móvel de ordem M → descrição da tarefa Tratamento Sensores na seção 4 (Especificações Gerais) e Tabela 1.” 
+  * “Campos de sensores em `BufferData` → Tabela 1 + definição de `BufferData` em `config.hpp`.”
+  * “Uso de buffer circular com 200 posições → especificação de buffer circular na Etapa 1 + `BUFFER_CAPACITY`.”
 
-Em caso de ambiguidade de estilo (por exemplo, uso de dataclass vs. classe manual), oferecer duas opções curtas e escolher uma, com justificativa de 1 linha.
+* Quando houver ausência de fonte explícita no ATR (por exemplo, escolha de std do ruído, política de reconexão MQTT), marcar:
 
-Aguardar minha confirmação antes de aplicar o mesmo padrão de correções a outros módulos da simulação.
+> “referência necessária”.
 
+---
 
-CODIGO:
+### 7. Otimização de tamanho
 
-"""
-Cliente MQTT Publisher para a Simulação da Mina.
+* Estimar se o código final **aumenta ou reduz** o número de linhas em relação:
 
-Responsável por enviar os dados dos sensores do caminhão para o broker MQTT,
-permitindo monitoramento externo (Etapa 2).
+  * ao Código_A;
+  * ao Código_B.
+* Apontar quais partes são **condensáveis sem perda de função**, por exemplo:
 
-Requisitos atendidos:
-    - Cliente MQTT Publisher 
-    - Publicação de variáveis da Tabela 1 
-"""
+  * “parser JSON duplicado pode ser isolado em função `parse_sensor_payload(...)`.”
+  * “bloco de tratamento de erro MQTT pode virar função auxiliar reutilizável.”
 
-from __future__ import annotations
+---
 
-import json
-import time
-from typing import Optional
+### 8. Regras de operação e passo a passo
 
-from PyQt6.QtCore import QObject, pyqtSignal
+* Avaliar **somente o código enviado** (Código_A e Código_B); não reescrever o sistema inteiro.
+* Manter **compatibilidade com etapas anteriores**:
 
-# Tentativa de importação segura para não quebrar a IDE se faltar a lib
-try:
-    import paho.mqtt.client as mqtt
-    MQTT_AVAILABLE = True
-except ImportError:
-    MQTT_AVAILABLE = False
-    print("[publisher] AVISO: paho-mqtt não instalado. Funcionalidade de rede desabilitada.")
+  * não alterar assinaturas já usadas por outras tarefas sem justificar;
+  * manter coerência com `config.hpp` e com o `SharedCircularBuffer`.
+* Em caso de ambiguidade de estilo de codificação (por exemplo, classe vs. funções livres), oferecer **duas opções curtas** e escolher uma, com justificativa de **1 linha**.
 
-from model.truck_state import TruckState
+**Passo a passo esperado na análise:**
 
+1. **Identificar escopo**
 
-class TruckPublisher(QObject):
-    """
-    Cliente MQTT encapsulado em QObject.
-    
-    Signals:
-        connected: Conexão estabelecida com sucesso.
-        disconnected: Conexão perdida ou encerrada.
-        published(topic, payload): Mensagem enviada com sucesso (útil para logs).
-    """
-    
-    # Sinais para integração com a UI
-    connected = pyqtSignal()
-    disconnected = pyqtSignal()
-    published = pyqtSignal(str, str)  # topic, payload
-    
-    def __init__(self, broker_host: str = "localhost", broker_port: int = 1883):
-        super().__init__()
-        
-        self._broker_host = broker_host
-        self._broker_port = broker_port
-        self._connected = False
-        self._client: Optional[mqtt.Client] = None
-        
-        if MQTT_AVAILABLE:
-            # Client ID único para evitar desconexões por conflito
-            client_id = f"sim_truck_{int(time.time())}_{id(self)}"
-            self._client = mqtt.Client(client_id=client_id, protocol=mqtt.MQTTv311)
-            
-            # Configura callbacks do Paho MQTT
-            self._client.on_connect = self._on_connect
-            self._client.on_disconnect = self._on_disconnect
-    
-    # =======================================================================
-    # CONTROLE DE CONEXÃO
-    # =======================================================================
-    
-    def connect_to_broker(self) -> None:
-        """Inicia a conexão assíncrona com o broker."""
-        if not MQTT_AVAILABLE or self._client is None:
-            return
-            
-        try:
-            print(f"[Publisher] Conectando a {self._broker_host}:{self._broker_port}...")
-            self._client.connect(self._broker_host, self._broker_port, keepalive=60)
-            self._client.loop_start()  # Thread de rede independente
-        except Exception as e:
-            print(f"[Publisher] Erro ao tentar conectar: {e}")
-            self._connected = False
-            self.disconnected.emit()
+   * Dizer claramente quais arquivos/funções fazem parte da “thread Tratamento de Sensores” no A e no B.
 
-    def disconnect_from_broker(self) -> None:
-        """Encerra a conexão e o loop de rede."""
-        if self._client is not None:
-            self._client.loop_stop()
-            self._client.disconnect()
-            # O callback on_disconnect será chamado e emitirá o sinal
-            
-    def is_connected(self) -> bool:
-        return self._connected
+2. **Comparar contra requisitos do ATR + config.hpp**
 
-    # =======================================================================
-    # CALLBACKS MQTT
-    # =======================================================================
+   * Verificar se:
 
-    def _on_connect(self, client, userdata, flags, rc):
-        if rc == 0:
-            self._connected = True
-            self.connected.emit()
-            print("[Publisher] Conectado.")
-        else:
-            self._connected = False
-            print(f"[Publisher] Falha na conexão. Código: {rc}")
+     * lê os campos corretos do JSON e preenche `BufferData`;
+     * aplica filtro de média móvel com ordem `FILTER_ORDER_M`;
+     * escreve no buffer circular de forma segura.
 
-    def _on_disconnect(self, client, userdata, rc):
-        self._connected = False
-        self.disconnected.emit()
-        if rc != 0:
-            print(f"[Publisher] Desconexão inesperada. Código: {rc}")
-        else:
-            print("[Publisher] Desconectado.")
+3. **Apontar diferenças chave e pontos fortes/fracos**
 
-    # =======================================================================
-    # PUBLICAÇÃO
-    # =======================================================================
+   * Preencher seções 1, 2 e 3 da saída.
 
-    def publish_state(self, truck_id: int, state: TruckState) -> None:
-        """
-        Publica o estado atual do caminhão.
-        
-        Tópico: atr/mine/truck/<id>/sensors
-        Payload: JSON (com valores inteiros conforme Tabela 1)
-        """
-        if not self._connected or self._client is None:
-            return
+4. **Definir ações recomendadas**
 
-        topic = f"atr/mine/truck/{truck_id}/sensors"
-        
-        # quantize=True força conversão para int/bool conforme Tabela 1
-        data = state.get_sensor_dict()
-        
-        try:
-            payload = json.dumps(data)
-            info = self._client.publish(topic, payload, qos=0)
-            
-            if info.rc == mqtt.MQTT_ERR_SUCCESS:
-                self.published.emit(topic, payload)
-                
-        except Exception as e:
-            print(f"[Publisher] Erro de publicação: {e}")
+   * Preencher seção 4 com verbos no início.
+
+5. **Gerar Código Final Consolidado**
+
+   * Com base na análise, montar a versão final (seção 5.2).
+
+6. **Documentar rastreabilidade e otimização de tamanho**
+
+   * Preencher seções 6 e 7.
+
+7. **Aguardar minha confirmação**
+
+   * Não aplicar automaticamente o mesmo padrão a outras tarefas (Lógica, Monitoramento etc.) até que eu peça.
 
 
+/**
+ * @file tratamento_sensores.cpp
+ * @brief Tarefa de Tratamento de Sensores com cliente MQTT síncrono
+ * @version 1.0
+ * @date 2025-11-30
+ */
+
+#include <iostream>
+#include <optional>
+#include <string>
+#include <boost/thread.hpp>
+#include <boost/chrono.hpp>
+#include <nlohmann/json.hpp>
+#include <mqtt/client.h>
+
+#include "tratamento_sensores.h"
+#include "config.hpp"
+
+namespace
+{
+    using json = nlohmann::json;
+
+    // -------------------------------------------------------------------------
+    // Filtro de média móvel para variáveis inteiras
+    // -------------------------------------------------------------------------
+
+    template <typename T>
+    class MovingAverageFilter
+    {
+    public:
+        explicit MovingAverageFilter(std::size_t window_size)
+            : m_window_size(window_size),
+              m_values(window_size, 0),
+              m_count(0),
+              m_index(0),
+              m_sum(0)
+        {
+        }
+
+        T update(T new_value)
+        {
+            if (m_window_size == 0)
+            {
+                // Se a janela for 0 (config incorreta), não filtra
+                return new_value;
+            }
+
+            std::size_t slot = (m_count < m_window_size) ? m_count : m_index;
+            std::size_t n = (m_count < m_window_size) ? (m_count + 1) : m_window_size;
+
+            // Remove valor antigo daquele slot da soma
+            m_sum -= m_values[slot];
+
+            // Insere novo valor
+            m_values[slot] = new_value;
+            m_sum += new_value;
+
+            // Atualiza contadores da janela
+            if (m_count < m_window_size)
+            {
+                ++m_count;
+            }
+            else
+            {
+                m_index = (m_index + 1) % m_window_size;
+            }
+
+            // Média simples (inteira)
+            return static_cast<T>(m_sum / static_cast<long long>(n));
+        }
+
+    private:
+        std::size_t m_window_size;
+        std::vector<T> m_values;
+        std::size_t m_count;
+        std::size_t m_index;
+        long long m_sum;
+    };
+
+    // Estrutura que agrupa os filtros de cada variável numérica de sensor
+    struct SensorFilters
+    {
+        MovingAverageFilter<int> pos_x{FILTER_ORDER_M};
+        MovingAverageFilter<int> pos_y{FILTER_ORDER_M};
+        MovingAverageFilter<int> ang_x{FILTER_ORDER_M};
+        MovingAverageFilter<int> temp{FILTER_ORDER_M};
+    };
+    // Faz o parsing do payload JSON e preenche um BufferData.
+    // Retorna true se tudo deu certo, false se o JSON está inválido/incompleto.
+    bool parse_sensor_message(const std::string &payload, BufferData &out)
+    {
+        try
+        {
+            auto j = json::parse(payload);
+
+            // truck_id e timestamp (se não vierem, usamos valores padrão)
+            if (j.contains("truck_id") && j["truck_id"].is_string())
+            {
+                out.truck_id = j["truck_id"].get<std::string>();
+            }
+
+            if (j.contains("timestamp") && (j["timestamp"].is_number_float() || j["timestamp"].is_number_integer()))
+            {
+                out.timestamp = j["timestamp"].get<double>();
+            }
+
+            // Objeto "sensors"
+            if (!j.contains("sensors") || !j["sensors"].is_object())
+            {
+                std::cerr << "[Tratamento] JSON sem objeto 'sensors'. Ignorando mensagem.\n";
+                return false;
+            }
+
+            const auto &js = j["sensors"];
+
+            // Todas as variáveis de sensores (valores brutos por enquanto; o filtro virá depois)
+            if (js.contains("i_posicao_x") && js["i_posicao_x"].is_number_integer())
+                out.i_posicao_x = js["i_posicao_x"].get<int>();
+
+            if (js.contains("i_posicao_y") && js["i_posicao_y"].is_number_integer())
+                out.i_posicao_y = js["i_posicao_y"].get<int>();
+
+            if (js.contains("i_angulo_x") && js["i_angulo_x"].is_number_integer())
+                out.i_angulo_x = js["i_angulo_x"].get<int>();
+
+            if (js.contains("i_temperatura") && js["i_temperatura"].is_number_integer())
+                out.i_temperatura = js["i_temperatura"].get<int>();
+
+            if (js.contains("i_falha_eletrica") && js["i_falha_eletrica"].is_boolean())
+                out.i_falha_eletrica = js["i_falha_eletrica"].get<bool>();
+
+            if (js.contains("i_falha_hidraulica") && js["i_falha_hidraulica"].is_boolean())
+                out.i_falha_hidraulica = js["i_falha_hidraulica"].get<bool>();
+
+            return true;
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "[Tratamento] Erro ao parsear JSON: " << e.what() << "\n";
+            return false;
+        }
+    }
+} // namespace
+
+void tratamento_thread(int id,
+                       int sleep_ms,
+                       std::atomic<bool> &running_flag,
+                       SharedCircularBuffer &buffer)
+{
+    std::cout << "[Tratamento] Thread " << id << " is starting." << std::endl;
+
+    try
+    {
+        // 1) Monta URI para o Paho (tcp://host:port)
+        std::cout << "[Tratamento] Connecting to MQTT broker at " << MQTT_URL << std::endl;
+
+        // 2) Cria cliente MQTT síncrono
+        mqtt::client client(MQTT_URL, "tratamento_client");
+        SensorFilters filters;
+
+        mqtt::connect_options conn_opts;
+        conn_opts.set_clean_session(true);
+
+        client.connect(conn_opts);
+        std::cout << "[Tratamento] Connected to broker. Subscribing to topic '"
+                  << MQTT_TOPIC_SENSORS << "'\n";
+
+        // 3) Subscribe no tópico dos sensores
+        client.subscribe(MQTT_TOPIC_SENSORS, MQTT_DEFAULT_QOS);
+
+        // 4) Loop principal: polling + parsing
+        while (running_flag.load())
+        {
+            // Permite interrupção via boost::thread::interrupt()
+            boost::this_thread::interruption_point();
+
+            mqtt::const_message_ptr msg;
+            // Espera até 'sleep_ms' por uma mensagem nova
+            bool got_msg = client.try_consume_message_for(
+                &msg,
+                std::chrono::milliseconds(sleep_ms));
+
+            if (!got_msg)
+            {
+                // Sem mensagem nova nesse período -> volta pro topo do loop
+                continue;
+            }
+
+            if (!msg)
+            {
+                // Mensagem nula (caso raro) -> ignora
+                continue;
+            }
+
+            const std::string payload = msg->get_payload_str();
+            BufferData data; // começa com valores padrão
+
+            if (!parse_sensor_message(payload, data))
+            {
+                // JSON inválido -> apenas loga o erro e ignora a amostra
+                continue;
+            }
+
+            // -----------------------------------------------------------------
+            // A) Aplica filtro de média móvel nas variáveis numéricas
+            // -----------------------------------------------------------------
+            data.i_posicao_x   = filters.pos_x.update(data.i_posicao_x);
+            data.i_posicao_y   = filters.pos_y.update(data.i_posicao_y);
+            data.i_angulo_x    = filters.ang_x.update(data.i_angulo_x);
+            data.i_temperatura = filters.temp.update(data.i_temperatura);
+
+            // Flags de falha (booleanos) são copiadas diretamente (sem filtro)
+            // data.i_falha_eletrica   já veio do JSON
+            // data.i_falha_hidraulica já veio do JSON
+
+            // -----------------------------------------------------------------
+            // B) Escreve a amostra TRATADA no buffer circular compartilhado
+            // -----------------------------------------------------------------
+            buffer.write(data, running_flag);
+
+            // (Opcional) Log reduzido de debug:
+            std::cout << "[Tratamento] Escreveu amostra filtrada: "
+                      << "id=" << data.truck_id
+                      << ", ts=" << data.timestamp
+                      << ", x=" << data.i_posicao_x
+                      << ", y=" << data.i_posicao_y
+                      << ", ang=" << data.i_angulo_x
+                      << ", T=" << data.i_temperatura
+                      << std::endl;
+        }
+
+        // 5) Desconecta ao sair do loop
+        std::cout << "[Tratamento] Disconnecting MQTT client..." << std::endl;
+        client.disconnect();
+    }
+    catch (const boost::thread_interrupted &)
+    {
+        std::cout << "[Tratamento] Thread " << id << " was interrupted." << std::endl;
+    }
+    catch (const mqtt::exception &e)
+    {
+        std::cerr << "[Tratamento] MQTT exception: " << e.what() << std::endl;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "[Tratamento] std::exception in tratamento_thread: " << e.what() << std::endl;
+    }
+
+    std::cout << "[Tratamento] Thread " << id << " is stopping." << std::endl;
+}
