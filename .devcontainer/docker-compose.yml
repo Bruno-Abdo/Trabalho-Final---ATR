@@ -7,12 +7,16 @@ services:
     volumes:
       # Mount your local workspace into the container.
       - ..:/home/ubuntu/workspace:cached
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
     ports:
       - "8000:8000"
     cap_add:
       - SYS_PTRACE
     security_opt:
       - seccomp=unconfined
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_QPA_PLATFORM=xcb
     # Keep the container alive for VS Code to attach
     command: sleep infinity
   # The InfluxDB 3 core service

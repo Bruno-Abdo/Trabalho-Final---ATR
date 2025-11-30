@@ -1,4 +1,7 @@
-Com base no prompt abaixo, siga o desenvolvimento do código core/publisher.py
+Siga o desenvolvimento do código ui/main_window.py, com base no prompt abaixo e
+nos arquivos envidando em anexo e no project files. Um modelo do main_window.py foi desenvolvido,
+avalie se ele atende os requisitos minimos para o funcionamento da simulacao e proponha mundanca, que 
+nao sejam unicamente esteticas.
 
 🧠 PROMPT MESTRE – Simulação da Mina (Python + PyQt6 + MQTT)
 Papel:
@@ -77,7 +80,6 @@ Use estes módulos como “espinha dorsal”:
 3.1. model/truck_state.py
    * Definir uma classe (p.ex. TruckState, usando dataclass) com, no mínimo:
       * Sensores:
-
          * i_posicao_x, i_posicao_y, i_angulo_x
          * i_temperatura
          * i_falha_eletrica, i_falha_hidraulica
@@ -129,9 +131,7 @@ Use estes módulos como “espinha dorsal”:
        * faixa de valores (mín/máx) e
        * taxa de atualização configurada para cada variável ou grupo de variáveis;
        * Emitir algum tipo de notificação (callback ou Qt signal) com o TruckState atualizado.
-
           * Deve ter uma API simples, como:
-
              * start(), stop()
              * set_update_config(variable_name, config).
 
@@ -141,28 +141,24 @@ Use estes módulos como “espinha dorsal”:
     * publish_state(truck_id, state: TruckState)
 
        * Publicar em tópicos do tipo:
-       * atr/mine/truck/<id>/sensors
+       * atr/truck/<id>/sensors
        * Não implemente subscribers aqui, a menos que eu peça.
 
 ________________
-
 
 4. Interface PyQt6 (“web-like”)
 Trabalhe com PyQt6, dando aparência organizada tipo painel web, mas sem exagerar na parte visual. Foque em:
 4.1. ui/main_window.py
   * Janela principal com:
-
      * Título “Simulação da Mina”.
      * Navegação entre:
      * Dashboard,
      * Configuração de variáveis,
      * Falhas.
-
-        * Use QTabWidget ou QStackedWidget com um menu simples.
+      * Use QTabWidget ou QStackedWidget com um menu simples.
 4.2. ui/config_panel.py
     * Uma tabela (p. ex. QTableWidget ou QTableView) listando cada variável relevante:
     * Colunas:
-
        * Variável
        * Mín
        * Máx
@@ -173,18 +169,15 @@ Trabalhe com PyQt6, dando aparência organizada tipo painel web, mas sem exagera
    * posição (x, y, ângulo),
    * temperatura,
    * flags de falha.
-
       * Pode usar layouts e group boxes para ficar “web-like”:
       * ex.: um QGroupBox para “Posição”, outro para “Temperatura”, outro para “Falhas”.
 4.4. Falhas na UI
-  * Uma aba (ou seção) com:
-
-     * checkboxes/botões para:
-     * “Falha elétrica”,
-     * “Falha hidráulica”,
-     * “Overtemperature”.
-
-        * Esses elementos chamam funções em faults.py via Simulator.
+   * Uma aba (ou seção) com:
+   * checkboxes/botões para:
+   * “Falha elétrica”,
+   * “Falha hidráulica”,
+   * “Overheat”.
+   * Esses elementos chamam funções em faults.py via Simulator.
 
 ________________
 
@@ -197,10 +190,9 @@ Em app.py, o fluxo padrão deve ser:
    * Simulator,Publisher,
    * MainWindow.
       3. Conectar:
-
-         * Simulator → UI: quando o estado é atualizado, atualizar o dashboard;
-         * Simulator → Publisher: publicar o estado (JSON) via MQTT na mesma frequência ou numa frequência definida.
-         4. Rodar o QApplication do PyQt6.
+      * Simulator → UI: quando o estado é atualizado, atualizar o dashboard;
+      * Simulator → Publisher: publicar o estado (JSON) via MQTT na mesma frequência ou numa frequência definida.
+      4. Rodar o QApplication do PyQt6.
 ________________
 
 

@@ -11,7 +11,7 @@ gerados pela Simulação da Mina (Etapa 2 do trabalho "2025_2 - ATR - Trabalho F
 - Integra-se com o núcleo de simulação via callback (make_sim_callback).
 
 Tópicos:
-    atr/mine/truck/<id>/sensors
+    atr/truck/<id>/sensors
 
 Payload (JSON):
     {
@@ -72,7 +72,7 @@ class MqttPublisher:
         self,
         host: str = "localhost",
         port: int = 1883,
-        base_topic: str = "atr/mine/truck",
+        base_topic: str = "atr/truck",
         client_id: Optional[str] = None,
         keepalive: int = 60,
         qos: int = 0,
@@ -84,7 +84,7 @@ class MqttPublisher:
         Args:
             host      : endereço do broker MQTT.
             port      : porta do broker (padrão: 1883).
-            base_topic: prefixo dos tópicos, ex.: "atr/mine/truck".
+            base_topic: prefixo dos tópicos, ex.: "atr/truck".
             client_id : ID do cliente MQTT; se None, é gerado automaticamente.
             keepalive : keepalive em segundos.
             qos       : QoS padrão das publicações (0, 1 ou 2).

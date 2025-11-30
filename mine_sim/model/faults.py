@@ -68,7 +68,7 @@ def set_hydraulic_fault(state: TruckState, enabled: bool) -> None:
     state.i_falha_hidraulica = bool(enabled)
 
 
-def set_overtemperature_fault(
+def set_overheat_fault(
     state: TruckState,
     enabled: bool,
     *,

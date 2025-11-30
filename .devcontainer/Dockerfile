@@ -9,6 +9,7 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
 # Ensure the path for local pip packages is included
 ENV PATH="/home/ubuntu/.local/bin:${PATH}" 
+# PyQT6 settings
 
 # --- Stage 1: Install Core Utilities and Bash ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -37,7 +38,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libfontconfig1 libfreetype6 libglib2.0-0 fonts-dejavu-core \
     libssl-dev liblz4-dev libre2-dev zlib1g-dev libcurl4-openssl-dev \
     # General PyQt6 dependencies
-    libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libdbus-1-3 xcb-cursor0 \
+    libegl1 libgl1 libxkbcommon-x11-0 libdbus-1-3 \
+    libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+    libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xfixes0 \
+    libxcb-xinerama0 \
     # C++ Libraries
     libboost-all-dev \
     nlohmann-json3-dev \

@@ -25,7 +25,7 @@ from .dynamics import (
 from .faults import (
     set_electrical_fault,
     set_hydraulic_fault,
-    set_overtemperature_fault,
+    set_overheat_fault,
     clear_all_faults,
     get_fault_status,
     get_fault_description,
@@ -55,7 +55,7 @@ __all__ = [
     # Funções de falhas
     'set_electrical_fault',
     'set_hydraulic_fault',
-    'set_overtemperature_fault',
+    'set_overheat_fault',
     'clear_all_faults',
     'get_fault_status',
     'get_fault_description',
