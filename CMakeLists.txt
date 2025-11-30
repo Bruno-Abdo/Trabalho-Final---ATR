@@ -37,22 +37,6 @@ endif()
 # CMake Package Manager
 include(CPM)
 
-# nlohmann/json
-CPMAddPackage(
-  NAME nlohmann_json
-  GITHUB_REPOSITORY nlohmann/json
-  GIT_TAG v3.12.0
-
-  OPTIONS
-    "JSON_Install OFF"                 # don't install when vendored
-    "JSON_MultipleHeaders ON"          # expand to full header tree (IDE friendly)
-    "JSON_ImplicitConversions OFF"     # avoid surprising implicit json->T conversions
-    "JSON_GlobalUDLs OFF"              # keep _json literal scoped (default; explicit here)
-    "JSON_Diagnostics OFF"             # enable for debug builds if you want richer errors
-    "JSON_Diagnostic_Positions OFF"    # enable if you want element position info
-    "JSON_BuildTests OFF"              # skip upstream unit tests
-)
-
 # Paho C++ + bundled Paho C
 CPMAddPackage(
   NAME paho-mqttpp3
@@ -72,6 +56,7 @@ CPMAddPackage(
 # ------------------------------------ REQUIREMENTS ------------------------------------ #
 find_package(Boost REQUIRED COMPONENTS system thread chrono)
 find_package(Threads REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 # ------------------------------------ SUBDIRECTORIES ------------------------------------ #
 add_subdirectory(app)

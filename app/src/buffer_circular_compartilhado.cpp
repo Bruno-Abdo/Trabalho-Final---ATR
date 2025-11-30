@@ -1,5 +1,6 @@
 #include "buffer_circular_compartilhado.h"
 #include <algorithm> // Para std::min_element
+#include <atomic>
 
 // --- Predicados (Chamados DEPOIS de travar o mutex) ---
 
@@ -53,11 +54,11 @@ BufferData SharedCircularBuffer::read(size_t consumer_id, std::atomic<bool> &run
     boost::unique_lock<boost::mutex> lock(m_mutex);
 
     // 2. Espera (liberando o lock) até que haja dados para ESTE consumidor
-    while (is_empty(consumer_id) && running)
+    while (is_empty(consumer_id) && running.load())
     {
         m_can_read_cv.wait(lock);
     }
-    if (!running)
+    if (!running.load())
         return {}; // Retorna dado vazio no shutdown
 
     // 3. Lê o dado e avança o ponteiro DESTE consumidor

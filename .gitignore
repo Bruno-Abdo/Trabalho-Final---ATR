@@ -1047,3 +1047,10 @@ dkms.conf
 
 ##### Databases
 *.db
+
+#### Python
+/__pycache__/
+*.py[cod]
+*$py.class
+.env/
+.venv/

@@ -1,10 +1,11 @@
 # ---- Core GUI (Pygame) ----
 pygame-ce
+PyQt6
 
 # ---- MQTT Client ----
 paho-mqtt
 
 # ---- Data & plotting ----
-# numpy
-# matplotlib
-# pandas
+numpy
+matplotlib
+pandas
