@@ -18,7 +18,7 @@ void planejamento_thread(int id,
                          std::atomic<bool> &running_flag,
                          SharedCircularBuffer &buffer)
 {
-    std::cout << "Planejamento " << id << " is starting." << std::endl;
+    //std::cout << "Planejamento " << id << " is starting." << std::endl;
     try
     {
         // Loop until the 'running' flag is set to false
@@ -39,7 +39,7 @@ void planejamento_thread(int id,
             buffer.write(data_out, running_flag);
 
             // This is the "work" - just printing to the log
-            std::cout << "[LOG] " << "Planejamento " << id << " is running..." << std::endl;
+            //std::cout << "[LOG] " << "Planejamento " << id << " is running..." << std::endl;
 
             // Sleep, but allow interruption (for clean shutdown)
             boost::this_thread::sleep_for(boost::chrono::milliseconds(sleep_ms));

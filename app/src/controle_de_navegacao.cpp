@@ -21,12 +21,15 @@ void controle_thread(int id,
     std::cout << "Controle " << id << " is starting." << std::endl;
     try
     {
+
+
+
         // Loop until the 'running' flag is set to false
         while (running_flag)
         {
 
             // This is the "work" - just printing to the log
-            std::cout << "[LOG] " << "Controle " << id << " is running..." << std::endl;
+            //std::cout << "[LOG] " << "Controle " << id << " is running..." << std::endl;
 
             // Sleep, but allow interruption (for clean shutdown)
             boost::this_thread::sleep_for(boost::chrono::milliseconds(sleep_ms));

@@ -25,7 +25,7 @@ void comando_thread(int id,
         while (running_flag)
         {
             // This is the "work" - just printing to the log
-            std::cout << "[LOG] " << "Comando " << id << " is running..." << std::endl;
+            //std::cout << "[LOG] " << "Comando " << id << " is running..." << std::endl;
 
             // Sleep, but allow interruption (for clean shutdown)
             boost::this_thread::sleep_for(boost::chrono::milliseconds(sleep_ms));

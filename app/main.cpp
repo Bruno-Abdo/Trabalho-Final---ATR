@@ -32,7 +32,7 @@
 const std::string MQTT_SERVER_ADDRESS{"mqtt://mosquitto:1883"};
 const std::string CLIENT_ID_BASE{"cpp_publisher_"};
 
-const std::string TOPIC_A{"test/topic/a"};
+const std::string TOPIC_A{"test/topic/a"}; 
 const std::string TOPIC_B{"test/topic/b"};
 const int QOS = 1;
 
@@ -90,7 +90,7 @@ void publisher_thread(
             // 3. Publish the message
             client.publish(msg);
 
-            std::cout << "Published from " << thread_id << ": " << payload << std::endl;
+            //std::cout << "Published from " << thread_id << ": " << payload << std::endl;
 
             // 4. Sleep using Boost's interruption-aware sleep
             boost::this_thread::sleep_for(boost::chrono::milliseconds(sleep_ms));
