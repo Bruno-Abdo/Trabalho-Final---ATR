@@ -26,8 +26,8 @@ static constexpr std::string_view project_version = "@PROJECT_VERSION@";
 #define SLEEP_MS_MONITORAMENTO 6000
 #define SLEEP_MS_PLANEJAMENTO 6000
 #define SLEEP_MS_CONTROLE 6000
-#define SLEEP_MS_COLETOR 6000
-#define SLEEP_MS_TRATAMENTO 1000
+#define SLEEP_MS_COLETOR 200
+#define SLEEP_MS_TRATAMENTO 100
 #define SLEEP_MS_COMANDO 6000
 
 // --- Buffer Configuration ---
@@ -37,7 +37,12 @@ static constexpr std::string_view project_version = "@PROJECT_VERSION@";
 #define BUFF_CAPACIDADE 200
 
 // --- Filter Configuration ---
-#define FILTER_ORDER_M 10 
+#define FILTER_ORDER_M 10
+
+#define CSV_OUTPUT_FILE "truck_data.csv"
+#define CSV_ENABLE_HEADER true
+
+#define INFLUXDB_ENABLED false
 
 // --- BufferData Structure ---
 struct BufferData

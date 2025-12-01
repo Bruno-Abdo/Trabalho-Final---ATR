@@ -55,12 +55,12 @@ int main()
     std::cout << "Starting all threads..." << std::endl;
 
     // We pass std::ref(client) because the client is not copyable
-    // boost::thread thread_c(coletor_thread, ID_COLETOR, SLEEP_MS_COLETOR, std::ref(g_running), std::ref(buffer));                   // 5 sec interval
+    boost::thread thread_c(coletor_thread, ID_COLETOR, SLEEP_MS_COLETOR, std::ref(g_running), std::ref(buffer)); // 5 sec interval
     // boost::thread thread_d(controle_thread, ID_CONTROLE, SLEEP_MS_CONTROLE, std::ref(g_running), std::ref(buffer));                // 7 sec interval
     // boost::thread thread_e(comando_thread, ID_COMANDO, SLEEP_MS_COMANDO, std::ref(g_running), std::ref(buffer));                   // 6 sec interval
     // boost::thread thread_f(monitoramento_thread, ID_MONITORAMENTO, SLEEP_MS_MONITORAMENTO, std::ref(g_running), std::ref(buffer)); // 8 sec interval
     // boost::thread thread_g(planejamento_thread, ID_PLANEJAMENTO, SLEEP_MS_PLANEJAMENTO, std::ref(g_running), std::ref(buffer));    // 9 sec interval
-    boost::thread thread_h(tratamento_thread, ID_TRATAMENTO, SLEEP_MS_TRATAMENTO, std::ref(g_running), std::ref(buffer));          // 1 sec interval
+    boost::thread thread_h(tratamento_thread, ID_TRATAMENTO, SLEEP_MS_TRATAMENTO, std::ref(g_running), std::ref(buffer)); // 1 sec interval
     // --- Wait for Shutdown Signal ---
 
     // You can also loop here to check g_running
@@ -73,14 +73,14 @@ int main()
 
     // Interrupt and join threads
     std::cout << "Interrupting threads..." << std::endl;
-    // thread_c.interrupt();
+    thread_c.interrupt();
     // thread_d.interrupt();
     // thread_e.interrupt();
     // thread_f.interrupt();
     // thread_g.interrupt();
     thread_h.interrupt();
 
-    // thread_c.join();
+    thread_c.join();
     // thread_d.join();
     // thread_e.join();
     // thread_f.join();

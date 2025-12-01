@@ -236,14 +236,14 @@ void tratamento_thread(int id,
             buffer.write(data, running_flag);
 
             // (Opcional) Log reduzido de debug:
-            std::cout << "[Tratamento] Escreveu amostra filtrada: "
-                      << "id=" << data.truck_id
-                      << ", ts=" << data.timestamp
-                      << ", x=" << data.i_posicao_x
-                      << ", y=" << data.i_posicao_y
-                      << ", ang=" << data.i_angulo_x
-                      << ", T=" << data.i_temperatura
-                      << std::endl;
+            // std::cout << "[Tratamento] Escreveu amostra filtrada: "
+            //           << "id=" << data.truck_id
+            //           << ", ts=" << data.timestamp
+            //           << ", x=" << data.i_posicao_x
+            //           << ", y=" << data.i_posicao_y
+            //           << ", ang=" << data.i_angulo_x
+            //           << ", T=" << data.i_temperatura
+            //           << std::endl;
         }
 
         // 6) Desconecta ao sair do loop
