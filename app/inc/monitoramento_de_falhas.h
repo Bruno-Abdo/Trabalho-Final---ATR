@@ -3,11 +3,11 @@
 
 #include <string>
 #include <atomic>
-#include "buffer_circular_compartilhado.h"
+#include "evento_de_falhas.h"
 
 void monitoramento_thread(int id,
                           int sleep_ms,
                           std::atomic<bool> &running_flag,
-                          SharedCircularBuffer &buffer);
+                          FaultEventBus &event_bus);
 
 #endif // MONITORAMENTO_DE_FALHAS_H

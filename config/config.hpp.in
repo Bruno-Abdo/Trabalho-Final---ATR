@@ -23,7 +23,7 @@ static constexpr std::string_view project_version = "@PROJECT_VERSION@";
 #define ID_COMANDO 6
 
 #define SLEEP_MS_LOGICA 6000
-#define SLEEP_MS_MONITORAMENTO 6000
+#define SLEEP_MS_MONITORAMENTO 100
 #define SLEEP_MS_PLANEJAMENTO 6000
 #define SLEEP_MS_CONTROLE 6000
 #define SLEEP_MS_COLETOR 200
