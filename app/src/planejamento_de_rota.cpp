@@ -1,6 +1,8 @@
 /**
  * @file planejamento_de_rota.cpp
  * @brief Implementação da tarefa de Planejamento de Rota com interface MQTT
+ * @version 2.0
+ * @date 2025-12-03
  */
 
 #include "planejamento_de_rota.h"
@@ -18,18 +20,19 @@
 #include <nlohmann/json.hpp>
 #include <mqtt/client.h>
 
-// Alias para JSON
 using json = nlohmann::json;
 
-// ----------------------------------------------------------------------------
-// Configuração interna
-// ----------------------------------------------------------------------------
+// ============================================================================
+// CONFIGURAÇÃO INTERNA
+// ============================================================================
 
 namespace
 {
-    // Tolerância padrão se não for especificada via MQTT
     constexpr double DEFAULT_WAYPOINT_TOLERANCE = 2.0;
 
+    /**
+     * @brief Estrutura de comando de rota recebido via MQTT.
+     */
     struct RouteCommand
     {
         int start_x{0};
@@ -41,7 +44,7 @@ namespace
     };
 
     /**
-     * @brief Faz o parse de um comando de rota em JSON.
+     * @brief Parseia comando de rota em formato JSON.
      *
      * Formato esperado:
      * {
@@ -53,6 +56,9 @@ namespace
      *   "num_waypoints": int (opcional, >= 2),
      *   "tolerance": double (opcional)
      * }
+     *
+     * @param payload String JSON recebida do MQTT
+     * @return std::optional<RouteCommand> Comando parseado ou std::nullopt se inválido
      */
     std::optional<RouteCommand> parse_route_command(const std::string &payload)
     {
@@ -66,7 +72,7 @@ namespace
             cmd.goal_x = j.at("goal_x").get<int>();
             cmd.goal_y = j.at("goal_y").get<int>();
 
-            // num_waypoints: se não vier, usa distância como aproximação
+            // num_waypoints: se não vier, calcula baseado na distância
             if (j.contains("num_waypoints") && j["num_waypoints"].is_number_integer())
             {
                 int n = j["num_waypoints"].get<int>();
@@ -79,7 +85,7 @@ namespace
             }
             else
             {
-                // Aproxima: 1 waypoint por unidade de distância
+                // Aproximação: ~1 waypoint por unidade de distância
                 const double dx = static_cast<double>(cmd.goal_x - cmd.start_x);
                 const double dy = static_cast<double>(cmd.goal_y - cmd.start_y);
                 const double dist = std::sqrt(dx * dx + dy * dy);
@@ -124,7 +130,6 @@ namespace
 
 void clear_route(RouteSharedState &state)
 {
-    // IMPORTANTE: mtx é boost::mutex na sua base de código
     boost::lock_guard<boost::mutex> lock(state.mtx);
 
     state.waypoints.clear();
@@ -182,7 +187,6 @@ std::vector<Waypoint> generate_linear_route(int start_x, int start_y,
     for (std::size_t i = 0; i < num_waypoints; ++i)
     {
         const double t = static_cast<double>(i) / steps;
-
         const double xf = static_cast<double>(start_x) + t * dx;
         const double yf = static_cast<double>(start_y) + t * dy;
 
@@ -231,17 +235,15 @@ void planejamento_thread(int id,
 {
     std::cout << "[Planejamento " << id << "] Thread iniciando..." << std::endl;
 
-    // Cliente MQTT síncrono (igual ao Tratamento, mas com client_id próprio)
     std::string client_id = std::string(MQTT_CLIENT_ID) + "_route";
     mqtt::client client(std::string(MQTT_URL), client_id);
 
-    // Tolerância de waypoint (pode ser atualizada via MQTT)
     double waypoint_tolerance = DEFAULT_WAYPOINT_TOLERANCE;
 
     try
     {
         // --------------------------------------------------------------------
-        // Conexão MQTT e assinatura do tópico de rota
+        // CONEXÃO MQTT
         // --------------------------------------------------------------------
         mqtt::connect_options conn_opts;
         conn_opts.set_clean_session(true);
@@ -253,11 +255,11 @@ void planejamento_thread(int id,
         client.start_consuming();
         client.subscribe(MQTT_TOPIC_ROUTE, MQTT_DEFAULT_QOS);
 
-        std::cout << "[Planejamento " << id << "] Assinado em "
+        std::cout << "[Planejamento " << id << "] Inscrito em "
                   << MQTT_TOPIC_ROUTE << std::endl;
 
         // --------------------------------------------------------------------
-        // Rota inicial fixa (fallback se nenhum comando MQTT chegar)
+        // ROTA INICIAL (FALLBACK)
         // --------------------------------------------------------------------
         const int START_X = 0;
         const int START_Y = 0;
@@ -275,12 +277,17 @@ void planejamento_thread(int id,
         set_new_route(route_state, initial_route);
 
         // --------------------------------------------------------------------
-        // Loop principal: lê comandos de rota via MQTT e atualiza progresso
+        // LOOP PRINCIPAL
         // --------------------------------------------------------------------
         while (running_flag.load())
         {
             boost::this_thread::interruption_point();
 
+            // ----------------------------------------------------------------
+            // VERIFICAR NOVOS COMANDOS DE ROTA (MQTT)
+            // ----------------------------------------------------------------
+            // AJUSTE HÍBRIDO: timeout de 100ms (balanceado)
+            // 1) Verifica se há novo comando de rota no MQTT (não bloqueante por muito tempo)
             mqtt::const_message_ptr msg;
             bool got_msg = client.try_consume_message_for(&msg, std::chrono::milliseconds(10));
             if (got_msg && msg)
@@ -301,35 +308,33 @@ void planejamento_thread(int id,
                 }
             }
 
-            // 2) Lê posição atual do caminhão do buffer (consumidor padrão)
+            // ----------------------------------------------------------------
+            // LER POSIÇÃO ATUAL DO CAMINHÃO
+            // ----------------------------------------------------------------
             BufferData current_data = buffer.read(id, running_flag);
 
             if (!running_flag.load())
                 break;
 
-            // 3) Obtém waypoint corrente da rota
+            // ----------------------------------------------------------------
+            // OBTER WAYPOINT CORRENTE
+            // ----------------------------------------------------------------
             Waypoint current_waypoint;
             bool has_waypoint = get_current_waypoint(route_state, current_waypoint);
 
             if (!has_waypoint)
             {
-                // Rota inativa ou concluída: apenas aguarda próximo ciclo
                 boost::this_thread::sleep_for(boost::chrono::milliseconds(sleep_ms));
                 continue;
             }
 
-            // 4) Calcula distância até o waypoint
+            // ----------------------------------------------------------------
+            // CALCULAR DISTÂNCIA E AVANÇAR WAYPOINT
+            // ----------------------------------------------------------------
             const double dx = static_cast<double>(current_data.i_posicao_x - current_waypoint.x);
             const double dy = static_cast<double>(current_data.i_posicao_y - current_waypoint.y);
             const double distance = std::sqrt(dx * dx + dy * dy);
 
-            // Debug opcional
-            // std::cout << "[Planejamento " << id << "] pos=("
-            //           << current_data.i_posicao_x << "," << current_data.i_posicao_y
-            //           << ") waypoint=(" << current_waypoint.x << "," << current_waypoint.y
-            //           << ") dist=" << distance << std::endl;
-
-            // 5) Se dentro da tolerância, avança para o próximo waypoint
             if (distance < waypoint_tolerance)
             {
                 boost::lock_guard<boost::mutex> lock(route_state.mtx);
@@ -337,11 +342,10 @@ void planejamento_thread(int id,
                 route_state.current_index++;
 
                 std::cout << "[Planejamento " << id
-                          << "] Waypoint alcançado! Avançando para índice "
+                          << "] Waypoint alcançado! Progresso: "
                           << route_state.current_index << "/"
                           << route_state.waypoints.size() << std::endl;
 
-                // Verifica se completou a rota
                 if (route_state.current_index >= route_state.waypoints.size())
                 {
                     route_state.route_completed = true;
@@ -352,12 +356,11 @@ void planejamento_thread(int id,
                 }
             }
 
-            // 6) Espera até o próximo ciclo
             boost::this_thread::sleep_for(boost::chrono::milliseconds(sleep_ms));
         }
 
         // --------------------------------------------------------------------
-        // Encerramento MQTT
+        // ENCERRAMENTO MQTT
         // --------------------------------------------------------------------
         if (client.is_connected())
         {
@@ -366,6 +369,7 @@ void planejamento_thread(int id,
                 client.unsubscribe(MQTT_TOPIC_ROUTE);
                 client.stop_consuming();
                 client.disconnect();
+                std::cout << "[Planejamento " << id << "] MQTT desconectado." << std::endl;
             }
             catch (const mqtt::exception &e)
             {
@@ -373,14 +377,11 @@ void planejamento_thread(int id,
                           << "] Erro ao desconectar MQTT: " << e.what() << std::endl;
             }
         }
-
-        std::cout << "[Planejamento " << id << "] Thread finalizando (running=false)." << std::endl;
     }
     catch (const boost::thread_interrupted &)
     {
         std::cout << "[Planejamento " << id << "] Thread interrompida." << std::endl;
 
-        // Tenta encerrar MQTT de forma graciosa
         if (client.is_connected())
         {
             try
@@ -406,5 +407,6 @@ void planejamento_thread(int id,
         std::cerr << "[Planejamento " << id << "] std::exception: "
                   << e.what() << std::endl;
     }
+
     std::cout << "[Planejamento " << id << "] Thread encerrada." << std::endl;
 }

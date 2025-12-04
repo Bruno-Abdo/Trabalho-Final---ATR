@@ -13,7 +13,8 @@ static constexpr std::string_view project_version = "@PROJECT_VERSION@";
 #define MQTT_TOPIC_ROUTE "atr/truck/001/route"
 #define MQTT_DEFAULT_QOS 1
 #define MQTT_DEFAULT_TIME_OUT_MS 10000
-
+// #define DEFAULT_WAYPOINT_TOLERANCE 2.0
+// #define ROUTE_MQTT_CONSUME_TIMEOUT_MS 100 // Timeout balanceado
 // --- Task IDs and Periods ---
 #define ID_LOGICA 0
 #define ID_MONITORAMENTO 1
