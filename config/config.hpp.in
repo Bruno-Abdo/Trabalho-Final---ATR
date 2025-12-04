@@ -9,8 +9,11 @@ static constexpr std::string_view project_version = "@PROJECT_VERSION@";
 // --- MQTT Configuration ---
 #define MQTT_URL "mqtt://mosquitto:1883"
 #define MQTT_CLIENT_ID "truck_001_embedded"
+#define TRUCK_ID "001"
+#define MQTT_TOPIC_ACTUATORS "atr/truck/001/actuators"
 #define MQTT_TOPIC_SENSORS "atr/truck/001/sensors"
 #define MQTT_TOPIC_ROUTE "atr/truck/001/route"
+#define MQTT_TOPIC_INTERFACE "atr/truck/001/interface"
 #define MQTT_DEFAULT_QOS 1
 #define MQTT_DEFAULT_TIME_OUT_MS 10000
 // #define DEFAULT_WAYPOINT_TOLERANCE 2.0
