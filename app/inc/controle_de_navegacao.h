@@ -92,7 +92,7 @@ namespace NavigationControl
 
     /// Ganho proporcional da aceleração em função da distância
     /// aceleracao = Kp_distance * distancia (saturado)
-    constexpr double Kp_distance = 3.0; // [% / metro]
+    constexpr double Kp_distance = 1.0; // [% / metro]
 
     /// Distância de desaceleração [metros]
     /// Quando dist < SLOWDOWN_DIST, reduz aceleração para evitar overshoot
@@ -106,6 +106,9 @@ namespace NavigationControl
     /// (Mais conservador que o limite físico do simulador de ±180°)
     constexpr int STEER_MIN = -30;
     constexpr int STEER_MAX = 30;
+
+    constexpr double DIST_MIN_MOVE = 1.0; 
+    constexpr double ACC_MIN_EFFECTIVE = 25.;
 }
 
 // ============================================================================

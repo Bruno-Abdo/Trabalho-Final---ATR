@@ -1,5 +1,6 @@
 """
 Equações de diferenças para a dinâmica do caminhão na Simulação da Mina.
+VERSÃO SIMPLIFICADA - Aceleração baixa (2%) é efetiva!
 
 Atende ao requisito do documento "2025_2 - ATR - Trabalho Final.pdf" de
 gerar valores de posição a partir dos atuadores de aceleração e direção,
@@ -7,15 +8,15 @@ usando uma equação diferencial (ou de diferenças) para simular a dinâmica
 (inércia) de movimentação do caminhão
 
 Interface pública:
-    - update_position(state, dt)
-    - update_angle(state, dt)
-    - update_temperature(state, dt)
-    - update_dynamics(state, dt, ambient)  # função de conveniência
+- update_position(state, dt)
+- update_angle(state, dt)
+- update_temperature(state, dt)
+- update_dynamics(state, dt, ambient) # função de conveniência
 
 Onde:
-    - state  : instancia de TruckState (model.truck_state)
-    - dt     : passo de tempo em segundos
-    - ambient: temperatura ambiente de referência [°C]
+- state : instancia de TruckState (model.truck_state)
+- dt : passo de tempo em segundos
+- ambient: temperatura ambiente de referência [°C]
 """
 
 from __future__ import annotations
@@ -26,24 +27,26 @@ from typing import Final
 from .truck_state import TruckState
 
 # ---------------------------------------------------------------------------
-# Parâmetros físicos da simulação (ajustáveis pelo grupo)
+# Parâmetros físicos da simulação - SIMPLIFICADOS
 # ---------------------------------------------------------------------------
 
 # Aceleração máxima física [m/s²] correspondente a o_aceleracao = ±100%.
-MAX_ACCEL_M_S2: Final[float] = 20.0
+# REDUZIDO de 20.0 para 5.0 - torna controle mais sensível
+MAX_ACCEL_M_S2: Final[float] = 5.0
 
-# Velocidade máxima em módulo [m/s]. 
-MAX_SPEED_M_S: Final[float] = 50.0
+# Velocidade máxima em módulo [m/s].
+# REDUZIDO de 50.0 para 30.0 - mais realista e alcançável
+MAX_SPEED_M_S: Final[float] = 30.0
 
-# Coeficiente de atrito/arrasto (1/s). Simula resistência do ar/rolagem,
-# fazendo o veículo desacelerar quando o acelerador é solto. 
-FRICTION_COEFF: Final[float] = 0.2
+# Coeficiente de atrito/arrasto (1/s). Simula resistência do ar/rolagem.
+# REDUZIDO de 0.2 para 0.01 - arrasto mínimo para dinâmica simplificada
+FRICTION_COEFF: Final[float] = 0.01
 
 # Zona morta de velocidade [m/s] e de comando de aceleração [%] para "parar" o veículo.
 SPEED_DEADBAND: Final[float] = 0.05
 THROTTLE_DEADBAND: Final[float] = 0.05
 
-# Taxa máxima de rotação [graus/s] para comando de direção extremo o_direcao = ±180. 
+# Taxa máxima de rotação [graus/s] para comando de direção extremo o_direcao = ±180.
 MAX_STEER_RATE_DEG_S: Final[float] = 180.0
 
 # Temperatura ambiente [°C]. O documento define faixa [-100, 200] e limiares de
@@ -51,9 +54,9 @@ MAX_STEER_RATE_DEG_S: Final[float] = 180.0
 AMBIENT_TEMP_C: Final[float] = 25.0
 
 # Coeficientes térmicos: aquecimento por esforço e resfriamento passivo.
-# São parâmetros de simulação, não do documento. 
-HEATING_RATE: Final[float] = 25.0   # °C/s a 100% de esforço
-COOLING_RATE: Final[float] = 0.4    # 1/s (fator de decaimento térmico)
+# São parâmetros de simulação, não do documento.
+HEATING_RATE: Final[float] = 25.0  # °C/s a 100% de esforço
+COOLING_RATE: Final[float] = 0.4   # 1/s (fator de decaimento térmico)
 
 # ---------------------------------------------------------------------------
 # Funções auxiliares
@@ -67,11 +70,11 @@ def _clamp(value: float, vmin: float, vmax: float) -> float:
 def _wrap_angle_deg(angle_deg: float) -> float:
     """
     Normaliza um ângulo em graus para o intervalo [0, 360).
-
     Mantém o ângulo numericamente estável ao longo da simulação e facilita
     exibição em UI.
     """
     return angle_deg % 360.0
+
 
 # ---------------------------------------------------------------------------
 # Dinâmica de posição (velocidade + posição X/Y)
@@ -82,19 +85,19 @@ def update_position(state: TruckState, dt: float) -> None:
     Atualiza a velocidade linear e a posição (i_posicao_x, i_posicao_y).
 
     Lógica (equações de diferenças):
-        1. Converte o comando o_aceleracao [-100, 100] em throttle [-1, 1].
-        2. Calcula a aceleração comandada: a_cmd = throttle * MAX_ACCEL_M_S2.
-        3. Calcula o termo de arrasto proporcional à velocidade.
-        4. Aceleração resultante: a_res = a_cmd - friction * v.
-        5. Integra velocidade: v_{k+1} = v_k + a_res * dt.
-        6. Aplica "zona morta" para velocidades muito pequenas.
-        7. Atualiza posição em 2D com integração de Euler:
-               x_{k+1} = x_k + v * cos(theta) * dt
-               y_{k+1} = y_k + v * sin(theta) * dt
+    1. Converte o comando o_aceleracao [-100, 100] em throttle [-1, 1].
+    2. Calcula a aceleração comandada: a_cmd = throttle * MAX_ACCEL_M_S2.
+    3. Calcula o termo de arrasto proporcional à velocidade.
+    4. Aceleração resultante: a_res = a_cmd - friction * v.
+    5. Integra velocidade: v_{k+1} = v_k + a_res * dt.
+    6. Aplica "zona morta" para velocidades muito pequenas.
+    7. Atualiza posição em 2D com integração de Euler:
+         x_{k+1} = x_k + v * cos(theta) * dt
+         y_{k+1} = y_k + v * sin(theta) * dt
 
     Parâmetros:
-        state: TruckState a ser atualizado (in-place).
-        dt   : passo de tempo em segundos.
+      state: TruckState a ser atualizado (in-place).
+      dt   : passo de tempo em segundos.
     """
     # 1) Comando de aceleração normalizado
     throttle = _clamp(state.o_aceleracao, -100.0, 100.0) / 100.0
@@ -134,15 +137,15 @@ def update_angle(state: TruckState, dt: float) -> None:
     Atualiza o ângulo i_angulo_x [graus] e a velocidade_angular.
 
     Lógica:
-        1. Normaliza o comando o_direcao [-180, 180] para [-1, 1].
-        2. Converte em taxa de giro em graus/s, proporcional a MAX_STEER_RATE_DEG_S.
-        3. Integra o ângulo: ang_{k+1} = ang_k + rate * dt.
-        4. Normaliza o ângulo em [0, 360).
-        5. Atualiza velocidade_angular em rad/s (derivada aproximada do ângulo).
+    1. Normaliza o comando o_direcao [-180, 180] para [-1, 1].
+    2. Converte em taxa de giro em graus/s, proporcional a MAX_STEER_RATE_DEG_S.
+    3. Integra o ângulo: ang_{k+1} = ang_k + rate * dt.
+    4. Normaliza o ângulo em [0, 360).
+    5. Atualiza velocidade_angular em rad/s (derivada aproximada do ângulo).
 
     Parâmetros:
-        state: TruckState a ser atualizado.
-        dt   : passo de tempo em segundos.
+      state: TruckState a ser atualizado.
+      dt   : passo de tempo em segundos.
     """
     # 1) Comando de direção normalizado
     steer_norm = _clamp(state.o_direcao, -180.0, 180.0) / 180.0
@@ -174,19 +177,19 @@ def update_temperature(
     Atualiza a temperatura i_temperatura [°C] do caminhão.
 
     Modelo simples:
-        effort     = |o_aceleracao| / 100
-        heating    = HEATING_RATE * effort * dt
-        delta_temp = T_k - ambient
-        cooling    = COOLING_RATE * delta_temp * dt
-        T_{k+1}    = T_k + heating - cooling
+      effort = |o_aceleracao| / 100
+      heating = HEATING_RATE * effort * dt
+      delta_temp = T_k - ambient
+      cooling = COOLING_RATE * delta_temp * dt
+      T_{k+1} = T_k + heating - cooling
 
     A temperatura é uma das variáveis monitoradas na Tabela 1 e usada
     pela lógica de falhas (limiares de alerta e defeito).
 
     Parâmetros:
-        state  : TruckState a ser atualizado.
-        dt     : passo de tempo em segundos.
-        ambient: temperatura ambiente de referência [°C].
+      state  : TruckState a ser atualizado.
+      dt     : passo de tempo em segundos.
+      ambient: temperatura ambiente de referência [°C].
     """
     # Esforço é o módulo da aceleração solicitada (0.0 a 1.0)
     effort = abs(_clamp(state.o_aceleracao, -100.0, 100.0)) / 100.0
@@ -215,14 +218,14 @@ def update_dynamics(
     Atualiza, em um único passo, ângulo, posição e temperatura do caminhão.
 
     Conveniência para o core.Simulator:
-        - Atualiza primeiro o ângulo (steering),
-        - depois a posição (cinemática 2D),
-        - e por fim a temperatura.
+    - Atualiza primeiro o ângulo (steering),
+    - depois a posição (cinemática 2D),
+    - e por fim a temperatura.
 
     Parâmetros:
-        state  : TruckState a ser atualizado.
-        dt     : passo de tempo em segundos.
-        ambient: temperatura ambiente de referência [°C].
+      state  : TruckState a ser atualizado.
+      dt     : passo de tempo em segundos.
+      ambient: temperatura ambiente de referência [°C].
     """
     update_angle(state, dt)
     update_position(state, dt)

@@ -21,9 +21,9 @@ from typing import Final, Dict
 
 # Valores padrão razoáveis para a escala da mina e do caminhão.
 # Posição: ~10cm de erro; Ângulo: ~0.5 grau; Temp: ~0.5 grau.
-DEFAULT_NOISE_POSITION: Final[float] = 0.8      # [m]
-DEFAULT_NOISE_ANGLE: Final[float] = 2         # [graus]
-DEFAULT_NOISE_TEMPERATURE: Final[float] = 2   # [°C]
+DEFAULT_NOISE_POSITION: Final[float] = 0.5      # [m]
+DEFAULT_NOISE_ANGLE: Final[float] = 1         # [graus]
+DEFAULT_NOISE_TEMPERATURE: Final[float] = 1   # [°C]
 
 
 @dataclass

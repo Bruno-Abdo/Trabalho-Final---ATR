@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.in": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "thread": "cpp"
     },
 }
