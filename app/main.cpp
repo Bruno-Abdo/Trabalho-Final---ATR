@@ -46,6 +46,7 @@ int main()
 
     SharedCircularBuffer buffer(BUFF_CAPACIDADE, BUFF_CONSUMIDORES);
     FaultEventBus event_bus;
+    RouteSharedState route_state;
     // Register signal handlers for clean shutdown
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
@@ -61,7 +62,7 @@ int main()
     // boost::thread thread_d(controle_thread, ID_CONTROLE, SLEEP_MS_CONTROLE, std::ref(g_running), std::ref(buffer));
     // boost::thread thread_e(comando_thread, ID_COMANDO, SLEEP_MS_COMANDO, std::ref(g_running), std::ref(buffer));
     boost::thread thread_f(monitoramento_thread, ID_MONITORAMENTO, SLEEP_MS_MONITORAMENTO, std::ref(g_running), std::ref(event_bus));
-    // boost::thread thread_g(planejamento_thread, ID_PLANEJAMENTO, SLEEP_MS_PLANEJAMENTO, std::ref(g_running), std::ref(buffer));
+    boost::thread thread_g(planejamento_thread, ID_PLANEJAMENTO, SLEEP_MS_PLANEJAMENTO, std::ref(g_running), std::ref(buffer), std::ref(route_state));
     boost::thread thread_h(tratamento_thread, ID_TRATAMENTO, SLEEP_MS_TRATAMENTO, std::ref(g_running), std::ref(buffer));
     // --- Wait for Shutdown Signal ---
 
@@ -78,15 +79,15 @@ int main()
     thread_c.interrupt();
     // thread_d.interrupt();
     // thread_e.interrupt();
-    // thread_f.interrupt();
-    // thread_g.interrupt();
+    thread_f.interrupt();
+    thread_g.interrupt();
     thread_h.interrupt();
 
     thread_c.join();
     // thread_d.join();
     // thread_e.join();
-    // thread_f.join();
-    // thread_g.join();
+    thread_f.join();
+    thread_g.join();
     thread_h.join();
 
     std::cout << "All threads stopped." << std::endl;
