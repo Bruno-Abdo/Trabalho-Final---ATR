@@ -4,7 +4,8 @@ Módulo model - Modelo de dados e física da Simulação da Mina.
 Contém:
     - TruckState: Estado completo do caminhão (sensores + atuadores)
     - Funções de dinâmica: equações de diferenças (posição, ângulo, temperatura)
-    - Funções de injeção de falhas: controle de defeitos elétricos/hidráulicos
+    - FaultInjector: Sistema de injeção de falhas para simulação
+    - Funções auxiliares de injeção de falhas
 """
 
 from .truck_state import TruckState
@@ -14,7 +15,7 @@ from .dynamics import (
     update_angle,
     update_temperature,
     update_dynamics,
-    # Constantes opcionais
+    # Constantes físicas
     MAX_ACCEL_M_S2,
     MAX_SPEED_M_S,
     FRICTION_COEFF,
@@ -23,40 +24,48 @@ from .dynamics import (
 )
 
 from .faults import (
+    # Classe principal
+    FaultInjector,
+    
+    # Funções helper (API simplificada)
     set_electrical_fault,
     set_hydraulic_fault,
-    set_overheat_fault,
+    force_temperature,
     clear_all_faults,
-    get_fault_status,
-    get_fault_description,
-    TEMP_ALERT_THRESHOLD_C,
-    TEMP_FAULT_THRESHOLD_C,
 )
 
+# Constantes de temperatura (do documento ATR - Tabela 1)
+TEMP_ALERT_THRESHOLD_C = 95   # Temperatura de alerta em °C
+TEMP_FAULT_THRESHOLD_C = 120  # Temperatura de defeito em °C
+
 __all__ = [
-    # Estado do caminhão
+    # === Estado do caminhão ===
     'TruckState',
     
-    # Funções de dinâmica
+    # === Funções de dinâmica ===
     'update_position',
     'update_angle',
     'update_temperature',
     'update_dynamics',
     
-    # Constantes de dinâmica
+    # === Constantes físicas de dinâmica ===
     'MAX_ACCEL_M_S2',
     'MAX_SPEED_M_S',
     'FRICTION_COEFF',
     'MAX_STEER_RATE_DEG_S',
     'AMBIENT_TEMP_C',
-    'TEMP_ALERT_THRESHOLD_C',
-    'TEMP_FAULT_THRESHOLD_C',
-
-    # Funções de falhas
+    
+    # === Sistema de injeção de falhas ===
+    'FaultInjector',
+    
+    # === Funções helper de falhas ===
     'set_electrical_fault',
     'set_hydraulic_fault',
-    'set_overheat_fault',
+    'force_temperature',
     'clear_all_faults',
-    'get_fault_status',
-    'get_fault_description',
+    
+    # === Constantes de temperatura ===
+    'TEMP_ALERT_THRESHOLD_C',
+    'TEMP_FAULT_THRESHOLD_C',
 ]
+

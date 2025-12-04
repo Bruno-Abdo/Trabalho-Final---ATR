@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from model.truck_state import TruckState
 from model.dynamics import update_dynamics, AMBIENT_TEMP_C
+from model.faults import FaultInjector
 from core.random_sources import NoiseConfig, apply_noise, get_default_noise_configs
 
 # Tipo de callback chamado a cada passo de simulação:
@@ -44,7 +45,7 @@ class SimulatorConfig:
         ambient_temp : temperatura ambiente [°C] usada na dinâmica térmica.
         quantize     : se True, exporta sensores quantizados (int), conforme Tabela 1
     """
-    dt_default: float = 0.05  # 50 ms
+    dt_default: float = 0.30  # 300 ms
     ambient_temp: float = AMBIENT_TEMP_C
 
 
@@ -77,6 +78,8 @@ class Simulator:
 
         # Configuração geral
         self.config: SimulatorConfig = config or SimulatorConfig()
+
+        self.fault_injector = FaultInjector()
 
         # Tempo de simulação acumulado [s]
         self.sim_time: float = 0.0
@@ -246,6 +249,7 @@ class Simulator:
         if step_dt <= 0.0:
             return
 
+        self.fault_injector.apply_faults(self.state)
 
         # 2) Lê o estado atual dos atuadores da fonte externa (ex.: MQTT subscriber)
         #    Isso permite fechar o loop: o que foi publicado no tópico de atuadores

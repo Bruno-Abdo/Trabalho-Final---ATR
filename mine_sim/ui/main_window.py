@@ -267,52 +267,19 @@ class MainWindow(QMainWindow):
         """Adiciona abas placeholder que serão substituídas posteriormente."""
         
         # Aba 1: Dashboard
-        dashboard_placeholder = self._create_placeholder_widget(
-            "Dashboard de Monitoramento",
-            [
-                "• Posição em tempo real (x, y, ângulo)",
-                "• Temperatura do motor",
-                "• Flags de falha (elétrica, hidráulica)",
-                "• Comandos dos atuadores (aceleração, direção)",
-                "• Gráficos de tendência"
-            ]
-        )
+        from ui.dashboard import DashboardWidget
+        self.dashboard_widget = DashboardWidget()
         self.tab_widget.addTab(
-            dashboard_placeholder,
+            self.dashboard_widget,
             self._icons['chart'],
             " Dashboard"
         )
 
-        # Aba 2: Configuração
-        config_placeholder = self._create_placeholder_widget(
-            "Painel de Configuração",
-            [
-                "• Faixas de valores (Mínimo/Máximo)",
-                "• Taxa de atualização dos sensores",
-                "• Parâmetros de ruído gaussiano",
-                "• Configurações do broker MQTT",
-                "• Período de simulação (dt)"
-            ]
-        )
+        # Aba 2: Falhas FUNCIONAL (NOVO)
+        from ui.faults_panel import FaultsPanel
+        self.faults_panel = FaultsPanel(self.simulator.fault_injector)
         self.tab_widget.addTab(
-            config_placeholder,
-            self._icons['settings'],
-            " Configuração"
-        )
-
-        # Aba 3: Falhas
-        faults_placeholder = self._create_placeholder_widget(
-            "Injeção de Falhas",
-            [
-                "• Falha elétrica (i_falha_eletrica)",
-                "• Falha hidráulica (i_falha_hidraulica)",
-                "• Superaquecimento do motor (>120°C)",
-                "• Temperatura de alerta (>95°C)",
-                "• Reset de falhas"
-            ]
-        )
-        self.tab_widget.addTab(
-            faults_placeholder,
+            self.faults_panel,
             self._icons['warning'],
             " Falhas"
         )
@@ -599,13 +566,19 @@ class MainWindow(QMainWindow):
     # ========================================================================
 
     def update_display(self, state: Any, sensors: Dict[str, Any]) -> None:
-        """
-        Callback chamado a cada passo de simulação.
-        """
+        """Callback chamado a cada passo de simulação."""
+            # Atualiza dashboard
+        self.dashboard_widget.update_data(state, sensors)
+        # Atualiza status bar (código existente)
         sim_time = self.simulator.sim_time
+        # self.status_time_label.setText(f"Tempo: {sim_time:.2f}s")
+
         pos_x = sensors.get("i_posicao_x", 0)
         pos_y = sensors.get("i_posicao_y", 0)
+        # self.status_pos_label.setText(f"Posição: ({pos_x:.1f}, {pos_y:.1f})")
+
         temp = sensors.get("i_temperatura", 0)
+        # self._update_temperature_display(temp)
 
     # ========================================================================
     # Limpeza ao Fechar

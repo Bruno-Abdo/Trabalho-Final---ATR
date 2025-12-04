@@ -1,166 +1,282 @@
 """
-Lógica de injeção de falhas na Simulação da Mina.
+model/faults.py
 
-Este módulo implementa funções para alterar o estado do TruckState de forma
-a simular condições de erro no caminhão, atendendo ao requisito de permitir
-que a tarefa de Simulação da Mina "gere defeito em algum caminhão" na
-interface de simulação.
+Sistema de injeção de falhas para simulação do caminhão autônomo.
 
-Baseado em:
-    - Tabela 1 (página 3, seção 4 – Especificações Gerais do Sistema) do
-      documento "2025_2 - ATR - Trabalho Final.pdf", que define:
-        * i_temperatura com faixa [-100, 200] e limiares:
-              alerta se T > 95 °C,
-              defeito se T > 120 °C,
-        * i_falha_eletrica e i_falha_hidraulica como flags de falha.
+Funcionalidades:
+- Injeção de falha elétrica
+- Injeção de falha hidráulica
+- Forçar temperatura crítica (>120°C)
+- Forçar temperatura de alerta (>95°C)
+- Reset de todas as falhas
 """
 
 from __future__ import annotations
 
-from typing import Final, Dict
+import logging
+from typing import TYPE_CHECKING
 
-from .truck_state import TruckState
+if TYPE_CHECKING:
+    from model.truck_state import TruckState
 
-# ---------------------------------------------------------------------------
-# Limiares de temperatura (diretamente da Tabela 1)
-# ---------------------------------------------------------------------------
-
-# Nível de alerta: T > 95 °C (Tabela 1).
-TEMP_ALERT_THRESHOLD_C: Final[float] = 95.0 
-
-# Nível de defeito: T > 120 °C (Tabela 1).
-TEMP_FAULT_THRESHOLD_C: Final[float] = 120.0
-
-# ---------------------------------------------------------------------------
-# Parâmetros de simulação (não definidos no documento) [referência necessária]
-# ---------------------------------------------------------------------------
-
-# Temperatura usada quando o usuário força um defeito de overtemperature.
-# Deve ser estritamente maior que TEMP_FAULT_THRESHOLD_C.
-TEMP_FORCED_OVERHEAT_C: Final[float] = 130.0  # [referência necessária]
-
-# Temperatura "segura" para retornar após remover falha térmica.
-# Escolhida abaixo do limiar de alerta.
-TEMP_SAFE_OPERATION_C: Final[float] = 85.0  # [referência necessária]
+logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Funções de injeção de falha (chamadas pela UI ou pelo Simulator)
-# ---------------------------------------------------------------------------
+class FaultInjector:
+    """
+    Gerenciador de injeção de falhas no sistema.
+    
+    Mantém estado persistente das falhas ativas e aplica-as
+    ao TruckState antes de cada passo de simulação.
+    """
+    
+    def __init__(self):
+        # Estado persistente das falhas injetadas
+        self._electric_fault_active = False
+        self._hydraulic_fault_active = False
+        self._force_overheat = False  # >120°C (defeito)
+        self._force_warning = False   # >95°C (alerta)
+        
+        # Temperaturas forçadas
+        self._overheat_temperature = 125.0  # °C
+        self._warning_temperature = 100.0   # °C
+    
+    # ========================================================================
+    # Controle de Falhas Elétricas
+    # ========================================================================
+    
+    def set_electric_fault(self, active: bool) -> None:
+        """
+        Ativa ou desativa falha elétrica.
+        
+        Args:
+            active: True para ativar falha, False para desativar
+        """
+        self._electric_fault_active = active
+        logger.info(
+            "Falha elétrica %s",
+            "ATIVADA" if active else "DESATIVADA"
+        )
+    
+    def toggle_electric_fault(self) -> bool:
+        """
+        Alterna estado da falha elétrica.
+        
+        Returns:
+            Novo estado (True = ativa, False = inativa)
+        """
+        self._electric_fault_active = not self._electric_fault_active
+        logger.info(
+            "Falha elétrica %s",
+            "ATIVADA" if self._electric_fault_active else "DESATIVADA"
+        )
+        return self._electric_fault_active
+    
+    def is_electric_fault_active(self) -> bool:
+        """Retorna True se falha elétrica está ativa."""
+        return self._electric_fault_active
+    
+    # ========================================================================
+    # Controle de Falhas Hidráulicas
+    # ========================================================================
+    
+    def set_hydraulic_fault(self, active: bool) -> None:
+        """
+        Ativa ou desativa falha hidráulica.
+        
+        Args:
+            active: True para ativar falha, False para desativar
+        """
+        self._hydraulic_fault_active = active
+        logger.info(
+            "Falha hidráulica %s",
+            "ATIVADA" if active else "DESATIVADA"
+        )
+    
+    def toggle_hydraulic_fault(self) -> bool:
+        """
+        Alterna estado da falha hidráulica.
+        
+        Returns:
+            Novo estado (True = ativa, False = inativa)
+        """
+        self._hydraulic_fault_active = not self._hydraulic_fault_active
+        logger.info(
+            "Falha hidráulica %s",
+            "ATIVADA" if self._hydraulic_fault_active else "DESATIVADA"
+        )
+        return self._hydraulic_fault_active
+    
+    def is_hydraulic_fault_active(self) -> bool:
+        """Retorna True se falha hidráulica está ativa."""
+        return self._hydraulic_fault_active
+    
+    # ========================================================================
+    # Controle de Temperatura
+    # ========================================================================
+    
+    def set_temperature_overheat(self, active: bool, temperature: float = 125.0) -> None:
+        """
+        Força temperatura de defeito (>120°C).
+        
+        Args:
+            active: True para forçar superaquecimento
+            temperature: Temperatura alvo em °C (padrão: 125°C)
+        """
+        self._force_overheat = active
+        if active:
+            self._overheat_temperature = max(120.0, temperature)
+            # Desativa alerta se overheat ativo
+            self._force_warning = False
+            logger.warning(
+                "SUPERAQUECIMENTO forçado: %.1f°C",
+                self._overheat_temperature
+            )
+        else:
+            logger.info("Superaquecimento forçado DESATIVADO")
+    
+    def set_temperature_warning(self, active: bool, temperature: float = 100.0) -> None:
+        """
+        Força temperatura de alerta (95-119°C).
+        
+        Args:
+            active: True para forçar alerta
+            temperature: Temperatura alvo em °C (padrão: 100°C)
+        """
+        self._force_warning = active
+        if active:
+            self._warning_temperature = max(95.0, min(119.0, temperature))
+            # Desativa overheat se warning ativo
+            self._force_overheat = False
+            logger.warning(
+                "Temperatura de ALERTA forçada: %.1f°C",
+                self._warning_temperature
+            )
+        else:
+            logger.info("Temperatura de alerta forçada DESATIVADA")
+    
+    def is_temperature_forced(self) -> bool:
+        """Retorna True se alguma temperatura está sendo forçada."""
+        return self._force_overheat or self._force_warning
+    
+    # ========================================================================
+    # Reset e Aplicação
+    # ========================================================================
+    
+    def reset_all_faults(self) -> None:
+        """
+        Reseta todas as falhas para estado normal.
+        """
+        self._electric_fault_active = False
+        self._hydraulic_fault_active = False
+        self._force_overheat = False
+        self._force_warning = False
+        logger.info("🔄 Todas as falhas foram RESETADAS")
+    
+    def apply_faults(self, state: TruckState) -> None:
+        """
+        Aplica todas as falhas ativas ao TruckState.
+        
+        IMPORTANTE: Este método SEMPRE define o estado completo das falhas,
+        tanto ativando quanto DESATIVANDO conforme necessário.
+        
+        Args:
+            state: TruckState a ser modificado
+        """
+        # === SEMPRE DEFINE O ESTADO (CORRIGE O BUG) ===
+        
+        # Define falha elétrica (ativa OU desativa)
+        state.i_falha_eletrica = self._electric_fault_active
+        
+        # Define falha hidráulica (ativa OU desativa)
+        state.i_falha_hidraulica = self._hydraulic_fault_active
+        
+        # Força temperatura se necessário
+        # (Não resetamos temperatura aqui pois ela evolui naturalmente)
+        if self._force_overheat:
+            state.i_temperatura = self._overheat_temperature
+        elif self._force_warning:
+            state.i_temperatura = self._warning_temperature
+        # Se nenhuma temperatura forçada, deixa evoluir naturalmente
+    
+    # ========================================================================
+    # Estado e Serialização
+    # ========================================================================
+    
+    def get_fault_summary(self) -> dict:
+        """
+        Retorna sumário do estado atual das falhas.
+        
+        Returns:
+            Dicionário com status de todas as falhas
+        """
+        return {
+            'electric_fault': self._electric_fault_active,
+            'hydraulic_fault': self._hydraulic_fault_active,
+            'temperature_overheat': self._force_overheat,
+            'temperature_warning': self._force_warning,
+            'any_fault_active': self.has_any_fault_active()
+        }
+    
+    def has_any_fault_active(self) -> bool:
+        """Retorna True se alguma falha está ativa."""
+        return (
+            self._electric_fault_active or
+            self._hydraulic_fault_active or
+            self._force_overheat or
+            self._force_warning
+        )
+
+
+# ============================================================================
+# Funções Helper (API simplificada)
+# ============================================================================
 
 def set_electrical_fault(state: TruckState, enabled: bool) -> None:
     """
-    Ativa ou desativa a falha elétrica (i_falha_eletrica).
-
-    O sensor i_falha_eletrica indica presença de falha no sistema elétrico
-    do veículo (Tabela 1).
+    API simplificada: Define falha elétrica diretamente no estado.
+    
+    Args:
+        state: TruckState a modificar
+        enabled: True para ativar, False para desativar
     """
-    state.i_falha_eletrica = bool(enabled)
+    state.i_falha_eletrica = enabled
+    logger.info("Falha elétrica %s", "ativada" if enabled else "desativada")
 
 
 def set_hydraulic_fault(state: TruckState, enabled: bool) -> None:
     """
-    Ativa ou desativa a falha hidráulica (i_falha_hidraulica).
-
-    O sensor i_falha_hidraulica indica presença de falha no sistema
-    hidráulico do veículo (Tabela 1).
+    API simplificada: Define falha hidráulica diretamente no estado.
+    
+    Args:
+        state: TruckState a modificar
+        enabled: True para ativar, False para desativar
     """
-    state.i_falha_hidraulica = bool(enabled)
+    state.i_falha_hidraulica = enabled
+    logger.info("Falha hidráulica %s", "ativada" if enabled else "desativada")
 
 
-def set_overheat_fault(
-    state: TruckState,
-    enabled: bool,
-    *,
-    critical: bool = True,
-) -> None:
+def force_temperature(state: TruckState, temperature: float) -> None:
     """
-    Simula uma condição de sobretemperatura do motor (i_temperatura).
-
-    A Tabela 1 define:
-        - nível de alerta se T > 95 °C,
-        - defeito se T > 120 °C.
-
-    Parâmetros:
-        state   : TruckState a ser modificado.
-        enabled : Se True, força uma temperatura acima do limiar selecionado.
-                  Se False, retorna a temperatura para TEMP_SAFE_OPERATION_C
-                  apenas se estiver acima do nível de alerta.
-        critical: Se True, força temperatura em nível de defeito (> 120 °C).
-                  Se False, poderia ser usado para simular apenas nível de
-                  alerta (> 95 °C). No momento, a implementação força sempre
-                  valor em nível de defeito, e esse parâmetro está reservado
-                  para extensões futuras. [referência necessária]
+    API simplificada: Força temperatura específica.
+    
+    Args:
+        state: TruckState a modificar
+        temperature: Temperatura desejada em °C
     """
-    if enabled:
-        # Força condição de defeito (superaquecimento) para garantir detecção
-        # pela tarefa de Monitoramento de Falhas.
-        state.i_temperatura = TEMP_FORCED_OVERHEAT_C
-    else:
-        # Só ajusta se ainda estiver acima do alerta, para não interferir
-        # na dinâmica térmica normal quando já está fria.
-        if state.i_temperatura > TEMP_ALERT_THRESHOLD_C:
-            state.i_temperatura = TEMP_SAFE_OPERATION_C
+    state.i_temperatura = temperature
+    logger.info("Temperatura forçada para %.1f°C", temperature)
 
 
 def clear_all_faults(state: TruckState) -> None:
     """
-    Remove falhas elétricas/hidráulicas injetadas e normaliza a temperatura
-    caso esteja acima do nível de alerta.
-
-    Útil para a UI implementar um botão de "Reset de Falhas".
+    API simplificada: Limpa todas as falhas.
+    
+    Args:
+        state: TruckState a modificar
     """
     state.i_falha_eletrica = False
     state.i_falha_hidraulica = False
+    # Não reseta temperatura (ela deve evoluir naturalmente)
+    logger.info("Todas as falhas limpas")
 
-    if state.i_temperatura > TEMP_ALERT_THRESHOLD_C:
-        state.i_temperatura = TEMP_SAFE_OPERATION_C
-
-
-# ---------------------------------------------------------------------------
-# Funções de consulta/diagnóstico (apoio à UI e logs)
-# ---------------------------------------------------------------------------
-
-def get_fault_status(state: TruckState) -> Dict[str, bool]:
-    """
-    Retorna um dicionário com o status das falhas, para ligação simples com a UI.
-
-    Chaves:
-        - "electrical"     : True se i_falha_eletrica == True.
-        - "hydraulic"      : True se i_falha_hidraulica == True.
-        - "overtemperature": True se i_temperatura > TEMP_FAULT_THRESHOLD_C.
-    """
-    return {
-        "electrical": state.i_falha_eletrica,
-        "hydraulic": state.i_falha_hidraulica,
-        "overtemperature": state.i_temperatura > TEMP_FAULT_THRESHOLD_C,
-    }
-
-
-def get_fault_description(state: TruckState) -> str:
-    """
-    Gera uma string descrevendo as falhas ativas, útil para logs/dashboards.
-
-    Exemplos:
-        - "NORMAL"
-        - "ELÉTRICA"
-        - "ELÉTRICA | HIDRÁULICA | SUPERAQUECIMENTO (130°C)"
-        - "ALERTA TEMP (100°C)"
-    """
-    active_faults = []
-
-    if state.i_falha_eletrica:
-        active_faults.append("ELÉTRICA")
-
-    if state.i_falha_hidraulica:
-        active_faults.append("HIDRÁULICA")
-
-    if state.i_temperatura > TEMP_FAULT_THRESHOLD_C:
-        active_faults.append(f"SUPERAQUECIMENTO ({state.i_temperatura:.0f}°C)")
-    elif state.i_temperatura > TEMP_ALERT_THRESHOLD_C:
-        active_faults.append(f"ALERTA TEMP ({state.i_temperatura:.0f}°C)")
-
-    if not active_faults:
-        return "NORMAL"
-
-    return " | ".join(active_faults)
