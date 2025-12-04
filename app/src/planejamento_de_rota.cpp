@@ -235,7 +235,7 @@ void planejamento_thread(int id,
 {
     std::cout << "[Planejamento " << id << "] Thread iniciando..." << std::endl;
 
-    std::string client_id = std::string(MQTT_CLIENT_ID) + "_route";
+    std::string client_id = "planejamento_rota";
     mqtt::client client(std::string(MQTT_URL), client_id);
 
     double waypoint_tolerance = DEFAULT_WAYPOINT_TOLERANCE;

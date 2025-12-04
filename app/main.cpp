@@ -59,7 +59,7 @@ std::atomic<bool> g_running(true);
  */
 void signal_handler(int signum)
 {
-    std::cout << "\n[Main] ⚠️  Sinal " << signum << " recebido. Iniciando shutdown..." << std::endl;
+    std::cout << "\n[Main] Sinal " << signum << " recebido. Iniciando shutdown..." << std::endl;
     g_running = false;
 }
 
@@ -205,7 +205,7 @@ int main()
         // ====================================================================
         // LOOP DE MONITORAMENTO PRINCIPAL
         // ====================================================================
-        std::cout << "\n[Main] ✅ Todas as threads iniciadas com sucesso!" << std::endl;
+        std::cout << "\n[Main] Todas as threads iniciadas com sucesso!" << std::endl;
         std::cout << "[Main] Sistema operacional. Pressione Ctrl+C para encerrar.\n"
                   << std::endl;
 
@@ -218,7 +218,7 @@ int main()
         // ====================================================================
         // SHUTDOWN COORDENADO
         // ====================================================================
-        std::cout << "\n[Main] 🛑 Sinal de shutdown detectado. Encerrando threads..." << std::endl;
+        std::cout << "\n[Main] Sinal de shutdown detectado. Encerrando threads..." << std::endl;
 
         // Notifica estruturas compartilhadas para desbloqueio de threads
         std::cout << "[Main] Notificando estruturas compartilhadas para shutdown..." << std::endl;
@@ -258,14 +258,14 @@ int main()
         // FINALIZAÇÃO
         // ====================================================================
         std::cout << "\n========================================" << std::endl;
-        std::cout << "  ✅ Sistema encerrado com sucesso!" << std::endl;
+        std::cout << "  Sistema encerrado com sucesso!" << std::endl;
         std::cout << "========================================" << std::endl;
 
         return 0;
     }
     catch (const std::exception &e)
     {
-        std::cerr << "\n[Main] ❌ ERRO CRÍTICO durante execução: " << e.what() << std::endl;
+        std::cerr << "\n[Main] ERRO CRÍTICO durante execução: " << e.what() << std::endl;
 
         // Tenta encerrar graciosamente mesmo em caso de erro
         g_running = false;

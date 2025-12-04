@@ -92,7 +92,7 @@ namespace NavigationControl
 
     /// Ganho proporcional da aceleração em função da distância
     /// aceleracao = Kp_distance * distancia (saturado)
-    constexpr double Kp_distance = 1.0; // [% / metro]
+    constexpr double Kp_distance = 3.0; // [% / metro]
 
     /// Distância de desaceleração [metros]
     /// Quando dist < SLOWDOWN_DIST, reduz aceleração para evitar overshoot
